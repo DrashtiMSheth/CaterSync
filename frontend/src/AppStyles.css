@@ -1,0 +1,248 @@
+:root {
+  --accent: #ff6a00;
+  --accent2: #ff007f;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: Inter, system-ui;
+}
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  position: relative;
+}
+
+.landing,
+.form-page {
+  background: linear-gradient(120deg, #1e90ff, #00b894, #6c5ce7);
+  background-size: 600% 600%;
+  animation: bgshift 15s ease infinite;
+}
+
+@keyframes bgshift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.logo {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  background-clip: text;          /* ✅ Standard */
+  -webkit-background-clip: text;  /* ✅ Vendor-prefixed for Safari/Chrome */
+  color: transparent;             /* Needed for Firefox */
+}
+
+
+.hero {
+  text-align: center;
+  max-width: 720px;
+  padding: 20px;
+}
+
+.hero-title {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.hero-sub {
+  opacity: 0.9;
+  margin-bottom: 20px;
+}
+
+.entrances {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.entry {
+  padding: 14px 22px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: 0.3s;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.entry:hover {
+  transform: translateY(-5px);
+}
+
+.btn-organiser {
+  background: linear-gradient(90deg, #ffd166, #ffa69e);
+  color: #111;
+}
+
+.btn-staff {
+  background: linear-gradient(90deg, #9be15d, #00b894);
+  color: #111;
+}
+
+.footer {
+  margin-top: 30px;
+  opacity: 0.7;
+  font-size: 13px;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 400px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  margin-bottom: 12px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.btn-primary,
+.btn-submit {
+  background: linear-gradient(90deg, #4f46e5, #06b6d4);
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #ffd166;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Floating Circles */
+.circles {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.circles li {
+  position: absolute;
+  display: block;
+  background: rgba(255, 255, 255, 0.2);
+  bottom: -150px;
+  border-radius: 50%;
+  animation: float 25s linear infinite;
+}
+
+.circles li:nth-child(1) {
+  left: 25%;
+  width: 80px;
+  height: 80px;
+}
+
+.circles li:nth-child(2) {
+  left: 10%;
+  width: 20px;
+  height: 20px;
+  animation-duration: 20s;
+}
+
+.circles li:nth-child(3) {
+  left: 70%;
+  width: 30px;
+  height: 30px;
+  animation-duration: 30s;
+}
+
+.circles li:nth-child(4) {
+  left: 40%;
+  width: 50px;
+  height: 50px;
+  animation-duration: 35s;
+}
+
+.circles li:nth-child(5) {
+  left: 60%;
+  width: 100px;
+  height: 100px;
+  animation-duration: 40s;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0) rotate(0);
+  }
+  100% {
+    transform: translateY(-1000px) rotate(720deg);
+  }
+}
+
+/* Profile picture */
+.profile-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.profile-pic {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+}
+
+/* Logout button */
+.logout-btn {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  color: #fff;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
