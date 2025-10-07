@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
+import { login as organiserLoginAPI } from "../api/api"; // centralized API
 
 export default function OrganiserLogin({ go, loading, setLoading }) {
   const { login } = useAuth();
@@ -13,7 +14,6 @@ export default function OrganiserLogin({ go, loading, setLoading }) {
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  // simple validity check (NO state updates here)
   const isValid = emailRegex.test(email) && password.length > 0;
 
   const validateField = (field, value) => {
@@ -34,35 +34,30 @@ export default function OrganiserLogin({ go, loading, setLoading }) {
 
     setLoading(true);
     setFeedback("");
+
     try {
-      const res = await fetch("http://localhost:5050/api/organiser/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
+      // call centralized API
+      const data = await organiserLoginAPI({ email, password });
 
-      if (!res.ok) {
-        setFeedback("Invalid credentials");
-        setShake(true);
-        setTimeout(() => setShake(false), 500);
-
-        if (data.message?.toLowerCase().includes("email")) {
-          setErrors({ email: "Email didn’t match" });
-        } else if (data.message?.toLowerCase().includes("password")) {
-          setErrors({ password: "Password didn’t match" });
-        }
-      } else {
-        login(data.token, data.user || { email });
-        setFeedback("Login Successful ✅");
-        go("organiser-dashboard");
-      }
+      // successful login
+      login(data.token, data.user || { email });
+      setFeedback("Login Successful ✅");
+      go("organiser-dashboard");
     } catch (err) {
-      console.error("Login error:", err);
-      setFeedback("⚠️ Could not connect to server.");
+      // error handling
+      const message = err.message || "Invalid credentials";
+      setFeedback(message);
       setShake(true);
       setTimeout(() => setShake(false), 500);
+
+      // set field-specific errors if possible
+      if (message.toLowerCase().includes("email")) {
+        setErrors({ email: "Email didn’t match" });
+      } else if (message.toLowerCase().includes("password")) {
+        setErrors({ password: "Password didn’t match" });
+      }
     }
+
     setLoading(false);
   };
 
@@ -130,7 +125,12 @@ export default function OrganiserLogin({ go, loading, setLoading }) {
             type="email"
             placeholder="Enter your email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+           onChange={(e) => {
+  setEmail(e.target.value);
+  if (feedback) setFeedback(""); // clear feedback while typing
+  if (errors.email) validateField("email", e.target.value);
+}}
+
             onBlur={() => validateField("email", email)}
           />
           {errors.email && (
@@ -143,7 +143,12 @@ export default function OrganiserLogin({ go, loading, setLoading }) {
               type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+  setPassword(e.target.value);
+  if (feedback) setFeedback(""); // clear feedback while typing
+  if (errors.password) validateField("password", e.target.value);
+}}
+
               onBlur={() => validateField("password", password)}
             />
             <span

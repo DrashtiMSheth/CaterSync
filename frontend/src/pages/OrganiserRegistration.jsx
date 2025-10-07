@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { register as organiserRegisterAPI } from "../api/api";
 
 // Helper to determine password strength
 function getPasswordStrength(pw) {
@@ -108,31 +109,34 @@ export default function OrganiserRegistration({ go }) {
     setStep(prev => prev + 1);
   }
 
-  async function handleSubmit(e) {
+ async function handleSubmit(e) {
     e.preventDefault();
     const newErrors = {};
     if (!form.otp) newErrors.otp = "Enter OTP";
     else if (form.otp !== serverOtp) newErrors.otp = "Invalid OTP";
     if (!form.terms) newErrors.terms = "Accept Terms & Conditions";
-
     if (Object.keys(newErrors).length > 0) return setErrors(newErrors);
 
     setInternalLoading(true);
     try {
-      // Simulate backend call
-      await new Promise(r => setTimeout(r, 1000));
+      const payload = new FormData();
+      Object.keys(form).forEach(key => {
+        if (key === "companyLogo" && form[key]) payload.append(key, form[key]);
+        else payload.append(key, form[key]);
+      });
 
-      console.log("Registration successful", form);
-      alert("✅ Registration Successful (Test Mode)");
+      const response = await organiserRegisterAPI(payload); // call API
+      console.log("Registration success:", response);
+
+      alert("✅ Registration Successful");
       go("organiser-login");
     } catch (err) {
-      console.error(err);
+      console.error("Registration error:", err);
       alert("❌ Registration failed");
     } finally {
       setInternalLoading(false);
     }
   }
-
   const inputStyle = { width: "100%", padding: "12px", margin: "8px 0 16px", borderRadius: "8px", border: "1px solid #ccc" };
   const bubbles = Array.from({ length: 8 }, (_, i) => ({
     size: 50 + Math.random() * 150,

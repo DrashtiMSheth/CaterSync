@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
+import { login as staffLogin } from "../api/api"; // centralized API import
 
 export default function StaffLogin({ go, loading, setLoading }) {
   const { login } = useAuth();
@@ -35,33 +36,23 @@ export default function StaffLogin({ go, loading, setLoading }) {
     setLoading(true);
     setFeedback("");
     try {
-      // Staff API endpoint
-      const res = await fetch("http://localhost:5050/api/staff/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
+      // Use centralized API
+      const data = await staffLogin({ email, password });
 
-      if (!res.ok) {
-        setFeedback("Invalid credentials");
-        setShake(true);
-        setTimeout(() => setShake(false), 500);
-        if (data.message?.toLowerCase().includes("email"))
-          setErrors({ email: "Email didn’t match" });
-        else if (data.message?.toLowerCase().includes("password"))
-          setErrors({ password: "Password didn’t match" });
-      } else {
-        localStorage.setItem("staffToken", data.token); // Staff-specific token
-        login(data.token, data.user || { email });
-        setFeedback("Login Successful ✅");
-        go("staff-dashboard"); // Staff-specific dashboard
-      }
+      // Success
+      localStorage.setItem("staffToken", data.token); // Staff-specific token
+      login(data.token, data.user || { email });
+      setFeedback("Login Successful ✅");
+      go("staff-dashboard"); // Staff-specific dashboard
     } catch (err) {
       console.error("Login error:", err);
-      setFeedback("⚠️ Could not connect to server.");
+      setFeedback(err.message || "⚠️ Invalid credentials or server error");
       setShake(true);
       setTimeout(() => setShake(false), 500);
+
+      // Optional field-specific error handling
+      if (err.message?.toLowerCase().includes("email")) setErrors({ email: "Email didn’t match" });
+      else if (err.message?.toLowerCase().includes("password")) setErrors({ password: "Password didn’t match" });
     }
     setLoading(false);
   };
@@ -130,6 +121,7 @@ export default function StaffLogin({ go, loading, setLoading }) {
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
+               if (feedback) setFeedback("");
               if (errors.email) validateField("email", e.target.value);
             }}
             onBlur={() => validateField("email", email)}
@@ -144,6 +136,7 @@ export default function StaffLogin({ go, loading, setLoading }) {
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
+                 if (feedback) setFeedback("");
                 if (errors.password) validateField("password", e.target.value);
               }}
               onBlur={() => validateField("password", password)}

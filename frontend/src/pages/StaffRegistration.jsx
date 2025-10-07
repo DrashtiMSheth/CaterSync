@@ -7,6 +7,8 @@ import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
+import { register as staffRegister } from "../api/api"; // centralized API
+
 // Fix leaflet default icon
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -91,7 +93,7 @@ export default function StaffRegistration({ go, loading, setLoading }) {
   const [otpExpiry, setOtpExpiry] = useState(null);
   const [otpCountdown, setOtpCountdown] = useState(0);
   const [passwordStrength, setPasswordStrength] = useState({ label: "", color: "" });
-  const [coords, setCoords] = useState([20.5937, 78.9629]);// default India
+  const [coords, setCoords] = useState([20.5937, 78.9629]); // default India
   const [completedSteps, setCompletedSteps] = useState([]);
 
   const formRef = useRef(null);
@@ -118,7 +120,6 @@ export default function StaffRegistration({ go, loading, setLoading }) {
   }, [otpExpiry]);
 
   useEffect(() => {
-    // Auto-scroll to top on step change
     formRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [step]);
 
@@ -168,10 +169,8 @@ export default function StaffRegistration({ go, loading, setLoading }) {
     
     if (Object.keys(newErrors).length > 0) return;
 
-    // Mark step as completed
     setCompletedSteps(prev => [...new Set([...prev, step])]);
 
-    // OTP generation for step 3
     if (step === 2) {
       const otp = generateDemoOtp();
       setGeneratedOtp(otp);
@@ -214,31 +213,32 @@ export default function StaffRegistration({ go, loading, setLoading }) {
         else if (k === "profilePic" && form.profilePic) fd.append("profilePic", form.profilePic);
         else fd.append(k, form[k]);
       }
-      const res = await fetch("http://localhost:5050/api/staff/register", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok) alert(data.message || "Server error");
-      else {
+
+      const data = await staffRegister(fd); // centralized API call
+
+      // Use API response properly
+      if (!data.success) {
+        alert(data.message || "⚠️ Registration failed");
+      } else {
         alert("🎉 Registration successful!");
         go("staff-login");
       }
+
     } catch (err) {
-      alert("⚠️ Server connection failed");
+      console.error(err);
+      alert(err.message || "⚠️ Server connection failed");
     }
     setLoading(false);
   };
 
-  // --- Styles ---
+  // --- Styles and bubbles effect ---
   const inputStyle = { width: "100%", padding: "12px", margin: "8px 0 16px", borderRadius: "8px", border: "1px solid #ccc" };
-
-  // --- Bubbles effect ---
   const bubbles = Array.from({ length: 8 }, (_, i) => ({
     size: 50 + Math.random() * 150,
     left: Math.random() * 100 + "%",
     duration: 8 + Math.random() * 10,
     delay: Math.random() * 5,
   }));
-
-  // --- Password bar color ---
   const getPasswordBarColor = () => {
     switch (passwordStrength) {
       case "Weak": return "red";
@@ -247,6 +247,7 @@ export default function StaffRegistration({ go, loading, setLoading }) {
       default: return "transparent";
     }
   };
+
 
   return (
     <div style={{ minHeight: "100vh", position: "relative", overflow: "hidden" }} ref={formRef}>
