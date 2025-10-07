@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
-import { login as staffLogin } from "../api/api"; // centralized API import
+import { loginStaff  } from "../api/api"; // centralized API import
 
 export default function StaffLogin({ go, loading, setLoading }) {
   const { login } = useAuth();
@@ -37,7 +37,7 @@ export default function StaffLogin({ go, loading, setLoading }) {
     setFeedback("");
     try {
       // Use centralized API
-      const data = await staffLogin({ email, password });
+      const data = await loginStaff ({ email, password });
 
       // Success
       localStorage.setItem("staffToken", data.token); // Staff-specific token

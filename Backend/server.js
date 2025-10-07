@@ -26,8 +26,18 @@ app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// =====================
+// ✅ CORS Middleware
+// =====================
+const allowedOrigins = ["http://localhost:3000", "http://localhost:5001"];
 app.use(cors({
-  origin: "http://localhost:3000", // frontend URL
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
@@ -73,7 +83,7 @@ const server = http.createServer(app);
 // WebSocket server
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5000",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true
   }

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
-import { login as organiserLoginAPI } from "../api/api"; // centralized API
+import { loginOrganiser  } from "../api/api"; // centralized API
 
 export default function OrganiserLogin({ go, loading, setLoading }) {
   const { login } = useAuth();
@@ -37,7 +37,7 @@ export default function OrganiserLogin({ go, loading, setLoading }) {
 
     try {
       // call centralized API
-      const data = await organiserLoginAPI({ email, password });
+      const data = await loginOrganiser({ email, password });
 
       // successful login
       login(data.token, data.user || { email });

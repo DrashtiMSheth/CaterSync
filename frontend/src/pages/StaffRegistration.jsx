@@ -7,7 +7,7 @@ import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
-import { register as staffRegister } from "../api/api"; // centralized API
+import { registerStaff  } from "../api/api"; // centralized API
 
 // Fix leaflet default icon
 delete L.Icon.Default.prototype._getIconUrl;
@@ -214,7 +214,7 @@ export default function StaffRegistration({ go, loading, setLoading }) {
         else fd.append(k, form[k]);
       }
 
-      const data = await staffRegister(fd); // centralized API call
+      const data = await registerStaff(fd); // centralized API call
 
       // Use API response properly
       if (!data.success) {

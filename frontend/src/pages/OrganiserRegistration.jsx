@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { register as organiserRegister } from "../api/api";
+import { registerOrganiser  } from "../api/api";
 
 // Helper to determine password strength
 function getPasswordStrength(pw) {
@@ -125,7 +125,7 @@ export default function OrganiserRegistration({ go }) {
         else payload.append(key, form[key]);
       });
 
-      const response = await organiserRegister(payload); // call API
+      const response = await registerOrganiser(payload); // call API
       console.log("Registration success:", response);
 
       alert("✅ Registration Successful");
