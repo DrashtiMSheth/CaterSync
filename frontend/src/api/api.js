@@ -1,22 +1,29 @@
 // frontend/src/api/api.js
 
-const BASE = "http://localhost:5000/api";
+const BASE = "http://localhost:5050/api";
 
 /**
  * Helper function for fetch requests
- * Handles errors centrally
+ * Handles errors centrally and prevents JSON parse errors
  */
 const request = async (url, options = {}) => {
   try {
     const res = await fetch(url, options);
 
-    // Handle HTTP errors
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || "API request failed");
+    const text = await res.text(); // always read as text
+    let data;
+
+    try {
+      data = JSON.parse(text); // try to parse as JSON
+    } catch {
+      data = text; // fallback to raw text
     }
 
-    return res.json();
+    if (!res.ok) {
+      throw new Error(data?.message || res.statusText || "API request failed");
+    }
+
+    return data;
   } catch (err) {
     console.error("API Error:", err.message);
     throw err;
@@ -25,28 +32,29 @@ const request = async (url, options = {}) => {
 
 /** ======================= Auth APIs ======================= */
 export const register = (data) =>
-  request(`${BASE}/auth/register`, {
+  request(`${BASE}/auth/staff/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 
 export const login = (data) =>
-  request(`${BASE}/auth/login`, {
+  request(`${BASE}/auth/staff/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 
-export const getProfile = (token) =>
-  request(`${BASE}/auth/me`, {
+export const getStaffProfile = (token) =>
+  request(`${BASE}/auth/staff/profile`, {
     headers: { "x-auth-token": token },
   });
-  
-  export const organiserRegister = (data) =>
+
+export const organiserRegister = (data) =>
   request(`${BASE}/auth/organiser/register`, {
     method: "POST",
-    body: data, // can use JSON or FormData
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data), // use JSON unless sending files
   });
 
 export const organiserLogin = (data) =>
@@ -56,6 +64,10 @@ export const organiserLogin = (data) =>
     body: JSON.stringify(data),
   });
 
+  export const getOrganiserProfile = (token) =>
+  request(`${BASE}/auth/organiser/profile`, {
+    headers: { "x-auth-token": token },
+  });
 /** ======================= Staff APIs ======================= */
 export const getAllStaff = (token) =>
   request(`${BASE}/staff`, {
@@ -105,7 +117,7 @@ export const deleteEvent = (id, token) =>
     headers: { "x-auth-token": token },
   });
 
-/** ======================= Feedback / Ratings (if any) ======================= */
+/** ======================= Feedback / Ratings ======================= */
 export const submitFeedback = (eventId, data, token) =>
   request(`${BASE}/events/${eventId}/feedback`, {
     method: "POST",
@@ -115,4 +127,3 @@ export const submitFeedback = (eventId, data, token) =>
 
 /** ======================= Additional APIs ======================= */
 // Add more endpoints as your project grows
-
