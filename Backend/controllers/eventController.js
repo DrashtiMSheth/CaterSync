@@ -1,65 +1,77 @@
 const Event = require("../models/Event");
-const Users = require("../models/User");
+const Staff = require("../models/Staff");
 
-// ✅ Create Event (Organizer only)
-exports.createEvent = async (req, res) => {
+// =====================
+// ✅ CREATE EVENT (Organiser Only)
+// =====================
+exports.createEvent = async (req, res, next) => {
   try {
-    const { name, description, location, date } = req.body;
+    const { name, description, location, date, priority = 1, required = 1 } = req.body;
 
-    if (!name || !location || !date) {
-      return res.status(400).json({ message: "Required fields missing" });
+    if (!name || !location?.address || !location?.lat || !location?.lng || !date) {
+      return next({ statusCode: 400, message: "Required fields missing" });
     }
 
-    // Only Organizer or Admin can create events
-    if (req.user.role !== "organizer" && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Unauthorized" });
+    if (req.user.role !== "organiser" && req.user.role !== "admin") {
+      return next({ statusCode: 403, message: "Unauthorized" });
     }
 
-    const event = new Event({
+    const newEvent = new Event({
       name,
-      description,
+      description: description || "",
       location,
       date,
+      priority,
+      required,
+      applied: 0,
+      organiser: req.user.id,
+      approved: true,
+      staffAssigned: [],
       createdBy: req.user.id,
-      staffAssigned: [], // Initially empty
     });
 
-    await event.save();
-    res.status(201).json({ message: "Event created successfully", event });
+    await newEvent.save();
+    res.status(201).json({ message: "Event created successfully", event: newEvent });
   } catch (err) {
-    console.error("Event create error:", err);
-    res.status(500).json({ message: "Server error" });
+    next(err);
   }
 };
 
-// ✅ Get Events for Logged-in User
-exports.getEvents = async (req, res) => {
+// =====================
+// ✅ GET EVENTS (Based on Role)
+// =====================
+exports.getEvents = async (req, res, next) => {
   try {
     let events;
 
     if (req.user.role === "staff") {
-      // Staff sees events assigned to them
-      events = await Event.find({ staffAssigned: req.user.id });
-    } else if (req.user.role === "organizer") {
-      // Organizer sees events they created
-      events = await Event.find({ createdBy: req.user.id });
+      events = await Event.find({ staffAssigned: req.user.id })
+        .populate("organiser", "fullName email organiserName")
+        .populate("staffAssigned", "fullName email phone role");
+    } else if (req.user.role === "organiser") {
+      events = await Event.find({ organiser: req.user.id })
+        .populate("staffAssigned", "fullName email phone role");
     } else if (req.user.role === "admin") {
-      // Admin sees all events
-      events = await Event.find();
+      events = await Event.find()
+        .populate("organiser", "fullName email organiserName")
+        .populate("staffAssigned", "fullName email phone role");
+    } else {
+      return next({ statusCode: 403, message: "Unauthorized" });
     }
 
     res.json({ success: true, events });
   } catch (err) {
-    console.error("Get events error:", err);
-    res.status(500).json({ message: "Server error" });
+    next(err);
   }
 };
 
-// ✅ Get Current & Upcoming Events (Staff)
-exports.getStaffEvents = async (req, res) => {
+// =====================
+// ✅ GET CURRENT & UPCOMING EVENTS (Staff)
+// =====================
+exports.getStaffEvents = async (req, res, next) => {
   try {
     if (req.user.role !== "staff") {
-      return res.status(403).json({ message: "Unauthorized" });
+      return next({ statusCode: 403, message: "Unauthorized" });
     }
 
     const today = new Date();
@@ -70,95 +82,110 @@ exports.getStaffEvents = async (req, res) => {
 
     res.json({ success: true, currentEvents, upcomingEvents });
   } catch (err) {
-    console.error("Get staff events error:", err);
-    res.status(500).json({ message: "Server error" });
+    next(err);
   }
 };
 
-// ✅ Assign Staff to Event (Organizer Only)
-exports.assignStaff = async (req, res) => {
+// =====================
+// ✅ ASSIGN STAFF TO EVENT (Organiser Only)
+// =====================
+exports.assignStaff = async (req, res, next) => {
   try {
-    if (req.user.role !== "organizer" && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Unauthorized" });
+    const { eventId, staffIds } = req.body;
+
+    if (req.user.role !== "organiser" && req.user.role !== "admin") {
+      return next({ statusCode: 403, message: "Unauthorized" });
     }
 
-    const { eventId, staffIds } = req.body; // staffIds = array of staff user IDs
+    if (!Array.isArray(staffIds)) {
+      return next({ statusCode: 400, message: "staffIds must be an array" });
+    }
+
     const event = await Event.findById(eventId);
-    if (!event) return res.status(404).json({ message: "Event not found" });
+    if (!event) return next({ statusCode: 404, message: "Event not found" });
+
+    if (req.user.role === "organiser" && event.organiser.toString() !== req.user.id) {
+      return next({ statusCode: 403, message: "You can only assign staff to your own events" });
+    }
+
+    const validStaff = await Staff.find({ _id: { $in: staffIds } });
+    if (validStaff.length !== staffIds.length) {
+      return next({ statusCode: 400, message: "Some staff IDs are invalid" });
+    }
 
     event.staffAssigned = staffIds;
     await event.save();
 
     res.json({ success: true, message: "Staff assigned successfully", event });
   } catch (err) {
-    console.error("Assign staff error:", err);
-    res.status(500).json({ message: "Server error" });
+    next(err);
   }
 };
 
-// ✅ Get All Staff Assigned to an Event (Organizer/Admin)
-exports.getEventStaff = async (req, res) => {
+// =====================
+// ✅ GET ALL STAFF ASSIGNED TO EVENT
+// =====================
+exports.getEventStaff = async (req, res, next) => {
   try {
     const { eventId } = req.params;
     const event = await Event.findById(eventId).populate("staffAssigned", "fullName email phone role");
 
-    if (!event) return res.status(404).json({ message: "Event not found" });
+    if (!event) return next({ statusCode: 404, message: "Event not found" });
 
     res.json({ success: true, staff: event.staffAssigned });
   } catch (err) {
-    console.error("Get event staff error:", err);
-    res.status(500).json({ message: "Server error" });
+    next(err);
   }
 };
 
-// ✅ Update Event (Organizer Only)
-exports.updateEvent = async (req, res) => {
+// =====================
+// ✅ UPDATE EVENT (Organiser Only)
+// =====================
+exports.updateEvent = async (req, res, next) => {
   try {
     const { eventId } = req.params;
 
-    if (req.user.role !== "organizer" && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Unauthorized" });
+    if (req.user.role !== "organiser" && req.user.role !== "admin") {
+      return next({ statusCode: 403, message: "Unauthorized" });
     }
 
     const event = await Event.findById(eventId);
-    if (!event) return res.status(404).json({ message: "Event not found" });
+    if (!event) return next({ statusCode: 404, message: "Event not found" });
 
-    // Only the creator can update (unless admin)
-    if (req.user.role === "organizer" && event.createdBy.toString() !== req.user.id) {
-      return res.status(403).json({ message: "You can only update your own events" });
+    if (req.user.role === "organiser" && event.organiser.toString() !== req.user.id) {
+      return next({ statusCode: 403, message: "You can only update your own events" });
     }
 
-    Object.assign(event, req.body); // Update event fields
+    Object.assign(event, req.body);
     await event.save();
 
     res.json({ success: true, message: "Event updated successfully", event });
   } catch (err) {
-    console.error("Update event error:", err);
-    res.status(500).json({ message: "Server error" });
+    next(err);
   }
 };
 
-// ✅ Delete Event (Organizer Only)
-exports.deleteEvent = async (req, res) => {
+// =====================
+// ✅ DELETE EVENT (Organiser Only)
+// =====================
+exports.deleteEvent = async (req, res, next) => {
   try {
     const { eventId } = req.params;
 
-    if (req.user.role !== "organizer" && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Unauthorized" });
+    if (req.user.role !== "organiser" && req.user.role !== "admin") {
+      return next({ statusCode: 403, message: "Unauthorized" });
     }
 
     const event = await Event.findById(eventId);
-    if (!event) return res.status(404).json({ message: "Event not found" });
+    if (!event) return next({ statusCode: 404, message: "Event not found" });
 
-    // Only creator can delete (unless admin)
-    if (req.user.role === "organizer" && event.createdBy.toString() !== req.user.id) {
-      return res.status(403).json({ message: "You can only delete your own events" });
+    if (req.user.role === "organiser" && event.organiser.toString() !== req.user.id) {
+      return next({ statusCode: 403, message: "You can only delete your own events" });
     }
 
     await event.remove();
     res.json({ success: true, message: "Event deleted successfully" });
   } catch (err) {
-    console.error("Delete event error:", err);
-    res.status(500).json({ message: "Server error" });
+    next(err);
   }
 };

@@ -1,45 +1,62 @@
-// routes/staffRoutes.js
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
-const path = require("path");
+const staffController = require("../controllers/staffController");
 const auth = require("../middlewares/auth");
 const role = require("../middlewares/roles");
-const staffController = require("../controllers/staffController");
+const upload = require("../middlewares/upload");
+const {
+  validate,
+  userRegisterValidator,
+  userLoginValidator,
+} = require("../middlewares/validationMiddleware");
 
 // =====================
-// ✅ Ensure uploads folder exists
+// ✅ Public Routes
 // =====================
-const uploadDir = path.join(__dirname, "..", "uploads");
-const fs = require("fs");
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
+// Staff registration
+router.post(
+  "/register",
+  upload.single("profilePic"),
+  userRegisterValidator,
+  validate,
+  staffController.register
+);
+
+// Staff login
+router.post(
+  "/login",
+  userLoginValidator,
+  validate,
+  staffController.login
+);
 
 // =====================
-// ✅ Multer setup for profile picture
+// ✅ Protected Routes (staff only)
 // =====================
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
-});
-const upload = multer({ storage });
 
-// =====================
-// ✅ Public routes
-// =====================
-router.post("/register", upload.single("profilePic"), staffController.register);
-router.post("/login", staffController.login);
-
-// =====================
-// ✅ Protected routes (staff only)
-// =====================
+// Get staff profile
 router.get("/profile", auth, role("staff"), staffController.getProfile);
+
+// Update staff profile
 router.put("/profile", auth, role("staff"), staffController.updateProfile);
+
+// Get events assigned to staff
 router.get("/events", auth, role("staff"), staffController.getStaffEvents);
 
-// Optional: For organisers to rate staff
-router.post("/:staffId/rate", auth, role("organiser"), staffController.rateStaff);
+// =====================
+// ✅ Routes for organisers (staff management)
+// =====================
 
-// Optional: Get all staff (nearby filter can be used by organiser)
+// Rate a staff member
+router.post(
+  "/:staffId/rate",
+  auth,
+  role("organiser"),
+  staffController.rateStaff
+);
+
+// Get all staff (organiser can filter nearby)
 router.get("/", auth, role("organiser"), staffController.getStaff);
 
 module.exports = router;

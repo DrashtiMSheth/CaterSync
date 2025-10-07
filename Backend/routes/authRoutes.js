@@ -1,20 +1,44 @@
-// routes/authRoutes.js
 const express = require("express");
 const organiserController = require("../controllers/organiserController");
 const staffController = require("../controllers/staffController");
 const auth = require("../middlewares/auth"); // JWT verification middleware
+const { validationResult } = require("express-validator");
+const {
+  userRegisterValidator,
+  userLoginValidator,
+  organiserRegisterValidator,
+  organiserLoginValidator,
+} = require("../middlewares/validationMiddleware");
 
 const router = express.Router();
+
+// ✅ Helper middleware to handle validation results
+const validate = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty())
+    return res.status(400).json({ errors: errors.array() });
+  next();
+};
 
 // =====================
 // ORGANISER ROUTES
 // =====================
 
 // Register organiser
-router.post("/organiser/register", organiserController.register);
+router.post(
+  "/organiser/register",
+  organiserRegisterValidator,
+  validate,
+  organiserController.register
+);
 
 // Login organiser
-router.post("/organiser/login", organiserController.login);
+router.post(
+  "/organiser/login",
+  organiserLoginValidator,
+  validate,
+  organiserController.login
+);
 
 // Get organiser profile (requires JWT)
 router.get("/organiser/profile", auth, organiserController.getProfile);
@@ -27,10 +51,10 @@ router.put("/organiser/profile", auth, organiserController.updateProfile);
 // =====================
 
 // Register staff
-router.post("/staff/register", staffController.register);
+router.post("/staff/register", userRegisterValidator, validate, staffController.register);
 
 // Login staff
-router.post("/staff/login", staffController.login);
+router.post("/staff/login", userLoginValidator, validate, staffController.login);
 
 // Get staff profile (requires JWT)
 router.get("/staff/profile", auth, staffController.getProfile);

@@ -1,17 +1,38 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
-const organiserSchema = new mongoose.Schema({
-  fullName: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  phone: { type: String, required: true },
-  password: { type: String, required: true },
-  organiserName: { type: String, required: true },
-  businessType: { type: String, required: true },
-  officeAddress: { type: String, default: "" },
-  website: { type: String, default: "" },
-  logo: { type: String, default: "" },
-  role: { type: String, default: "organiser" },
-  otp: { type: String, default: null } // optional
-}, { timestamps: true });
+const organiserSchema = new mongoose.Schema(
+  {
+    fullName: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    phone: { type: String, required: true },
+    password: { type: String, required: true },
+    organiserName: { type: String, required: true },
+    businessType: { type: String, required: true },
+    officeAddress: { type: String, default: "" },
+    website: { type: String, default: "" },
+    logo: { type: String, default: "" },
+    role: { type: String, default: "organiser" },
+    otp: { type: String, default: null },
+  },
+  { timestamps: true }
+);
+
+// ✅ Pre-save hook for password hashing
+organiserSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ✅ Compare password method
+organiserSchema.methods.comparePassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 
 module.exports = mongoose.model("Organiser", organiserSchema);
