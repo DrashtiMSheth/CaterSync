@@ -1,4 +1,3 @@
-// models/Staff.js
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
@@ -16,23 +15,37 @@ const staffSchema = new mongoose.Schema(
       lat: { type: Number },
       lng: { type: Number },
     },
-    availability: { type: String, default: "" }, // e.g., "full-time", "part-time"
+    availability: { type: String, default: "" },
     gender: { type: String, default: "" },
     languages: { type: [String], default: [] },
-    profilePic: { type: String, default: "" },
+    profilePic: { type: String, default: "" }, 
     ratings: [
       {
         organiser: { type: mongoose.Schema.Types.ObjectId, ref: "Organiser" },
+        event: { type: mongoose.Schema.Types.ObjectId, ref: "Event" },
         rating: { type: Number, min: 1, max: 5 },
+      },
+    ],
+    appliedEvents: [
+      {
+        event: { type: mongoose.Schema.Types.ObjectId, ref: "Event" },
+        status: { type: String, enum: ["pending", "accepted", "rejected"], default: "pending" },
+        appliedAt: { type: Date, default: Date.now },
+      },
+    ],
+    notifications: [
+      {
+        type: { type: String },
+        message: { type: String },
+        relatedEvent: { type: mongoose.Schema.Types.ObjectId, ref: "Event" },
+        read: { type: Boolean, default: false },
+        createdAt: { type: Date, default: Date.now },
       },
     ],
   },
   { timestamps: true }
 );
 
-// =====================
-// ✅ Pre-save password hashing
-// =====================
 staffSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   try {
@@ -44,9 +57,6 @@ staffSchema.pre("save", async function (next) {
   }
 });
 
-// =====================
-// ✅ Compare password method
-// =====================
 staffSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };

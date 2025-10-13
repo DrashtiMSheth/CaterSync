@@ -2,12 +2,16 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-// =====================
-// ✅ REGISTER USER
-// =====================
 exports.register = async (req, res, next) => {
   try {
-    const { fullName, email, password, phone, role } = req.body;
+    let { fullName, email, password, phone, role } = req.body;
+
+    email = email?.trim().toLowerCase();
+    password = password?.trim();
+
+    if (!fullName || !email || !password || !phone) {
+      return next({ statusCode: 400, message: "All fields are required" });
+    }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -18,7 +22,7 @@ exports.register = async (req, res, next) => {
       fullName,
       email,
       phone,
-      password, // hashed by pre-save hook
+      password, 
       role: role || "user",
     });
 
@@ -46,12 +50,16 @@ exports.register = async (req, res, next) => {
   }
 };
 
-// =====================
-// ✅ LOGIN USER
-// =====================
 exports.login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+
+    email = email?.trim().toLowerCase();
+    password = password?.trim();
+
+    if (!email || !password) {
+      return next({ statusCode: 400, message: "Email and password are required" });
+    }
 
     const user = await User.findOne({ email });
     if (!user) return next({ statusCode: 400, message: "Invalid credentials" });

@@ -1,5 +1,9 @@
-import React, { useState } from "react";
-import "./AppStyles.css";   // global styles
+// src/App.js
+import React, { useState, useEffect } from "react";
+import { useAuth } from "./context/AuthContext";
+import "./AppStyles.css";
+
+// Pages
 import LandingPage from "./pages/LandingPage";
 import OrganiserLogin from "./pages/OrganiserLogin";
 import StaffLogin from "./pages/StaffLogin";
@@ -9,40 +13,59 @@ import OrganiserDashboard from "./pages/OrganiserDashboard";
 import StaffDashboard from "./pages/StaffDashboard";
 
 export default function App() {
+  const { user, logout } = useAuth();
   const [route, setRoute] = useState("landing");
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false); // global loading state
+  const [loading, setLoading] = useState(false);
 
-  // Navigation function
-  function go(page, userData = null) {
-    if (userData) setUser(userData);
+  // On initial load, check user role and auto-route
+  useEffect(() => {
+    if (user) {
+      if (user.role === "organiser") setRoute("organiser-dashboard");
+      else if (user.role === "staff") setRoute("staff-dashboard");
+    } else {
+      setRoute("landing");
+    }
+  }, [user]);
+
+  // Navigation helper
+  const go = (page) => {
     setRoute(page);
-    setLoading(false); // reset loading on route change
-  }
+    setLoading(false);
+  };
 
-  // Logout function
-  function logout() {
-    setUser(null);
-    setRoute("landing");
-  }
+  // Render current route
+  const renderPage = () => {
+    switch (route) {
+      case "landing":
+        return <LandingPage go={go} />;
+      case "organiser-login":
+        return <OrganiserLogin go={go} loading={loading} setLoading={setLoading} />;
+      case "staff-login":
+        return <StaffLogin go={go} loading={loading} setLoading={setLoading} />;
+      case "organiser-register":
+        return <OrganiserRegistration go={go} loading={loading} setLoading={setLoading} />;
+      case "staff-register":
+        return <StaffRegistration go={go} loading={loading} setLoading={setLoading} />;
+      case "organiser-dashboard":
+        return <OrganiserDashboard go={go} />;
+      case "staff-dashboard":
+        return <StaffDashboard go={go} />;
+      default:
+        return <LandingPage go={go} />;
+    }
+  };
 
   return (
-    <>
+    <div className="app-container">
       {/* Persistent Logout button on dashboards */}
       {(route === "organiser-dashboard" || route === "staff-dashboard") && (
-        <button className="logout-btn" onClick={logout}>
+        <button className="logout-btn" onClick={() => logout()}>
           Logout
         </button>
       )}
 
-      {/* Routes */}
-      {route === "landing" && <LandingPage go={go} />}
-      {route === "organiser-login" && <OrganiserLogin go={go} loading={loading} setLoading={setLoading} />}
-      {route === "staff-login" && <StaffLogin go={go} loading={loading} setLoading={setLoading} />}
-      {route === "organiser-register" && <OrganiserRegistration go={go} loading={loading} setLoading={setLoading} />}
-      {route === "staff-register" && <StaffRegistration go={go} loading={loading} setLoading={setLoading} />}
-      {route === "organiser-dashboard" && <OrganiserDashboard go={go} user={user} />}
-      {route === "staff-dashboard" && <StaffDashboard go={go} user={user} />}
-    </>
+      {/* Render current page */}
+      {renderPage()}
+    </div>
   );
 }

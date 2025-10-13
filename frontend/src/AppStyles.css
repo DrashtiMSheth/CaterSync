@@ -230,19 +230,21 @@ textarea {
   border: 2px solid #fff;
 }
 
-/* Logout button */
+/* src/AppStyles.css
 .logout-btn {
-  position: absolute;
+  position: fixed;
   top: 16px;
-  right: 20px;
+  right: 16px;
   padding: 8px 14px;
-  background: rgba(0, 0, 0, 0.4);
-  border: none;
+  background: #ff4757;
   color: #fff;
-  border-radius: 10px;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
+  font-weight: bold;
+  z-index: 1000;
 }
 
 .logout-btn:hover {
-  background: rgba(0, 0, 0, 0.6);
-}
+  background: #ff6b81;
+} */

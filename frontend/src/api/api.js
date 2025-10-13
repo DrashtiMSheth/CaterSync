@@ -1,41 +1,57 @@
-// frontend/src/api/api.js
-
+// src/api/api.js
 const BASE = process.env.REACT_APP_API_URL || "http://localhost:5050/api";
 
 /**
- * Build headers including token if provided
- * @param {string} token 
- * @param {boolean} isJSON 
+ * Build headers including token if provided.
+ * Automatically skips Content-Type for FormData.
+ * @param {string} token
+ * @param {any} body
  * @returns {object} headers
  */
-const buildHeaders = (token, isJSON = true) => {
+const buildHeaders = (token, body) => {
   const headers = {};
-  if (isJSON) headers["Content-Type"] = "application/json";
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  if (!(body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (token) headers["x-auth-token"] = token;
   return headers;
 };
 
 /**
  * Central request helper
- * @param {string} url 
- * @param {object} options 
+ * Supports GET, POST, PUT, DELETE, FormData, query params
+ * @param {string} url
+ * @param {object} options
  * @returns {Promise<any>}
  */
 const request = async (url, options = {}) => {
   try {
-    const res = await fetch(url, options);
+    let finalUrl = url;
+
+    // Handle query params
+    if (options.params) {
+      const query = new URLSearchParams(options.params).toString();
+      finalUrl += `?${query}`;
+    }
+
+    // Build headers
+    if (!options.headers) options.headers = buildHeaders(options.token, options.body);
+
+    // Convert body to JSON if not FormData
+    if (options.body && !(options.body instanceof FormData) && options.method !== "GET") {
+      options.body = JSON.stringify(options.body);
+    }
+
+    const res = await fetch(finalUrl, options);
     const text = await res.text();
     let data;
-
     try {
-      data = JSON.parse(text);
+      data = text ? JSON.parse(text) : {};
     } catch {
-      data = text;
+      data = { message: text };
     }
 
-    if (!res.ok) {
-      throw new Error(data?.message || res.statusText || "API request failed");
-    }
+    if (!res.ok) throw new Error(data?.message || res.statusText || "API request failed");
 
     return data;
   } catch (err) {
@@ -45,104 +61,73 @@ const request = async (url, options = {}) => {
 };
 
 /** ======================= Auth APIs ======================= */
-export const registerStaff = (data) =>
-  request(`${BASE}/auth/staff/register`, {
-    method: "POST",
-    headers: buildHeaders(),
-    body: JSON.stringify(data),
-  });
+export const registerStaff = (formData) =>
+  request(`${BASE}/auth/staff/register`, { method: "POST", body: formData });
 
-export const loginStaff = (data) =>
-  request(`${BASE}/auth/staff/login`, {
-    method: "POST",
-    headers: buildHeaders(),
-    body: JSON.stringify(data),
-  });
+export const loginStaff = (credentials) =>
+  request(`${BASE}/auth/staff/login`, { method: "POST", body: credentials });
 
 export const getStaffProfile = (token) =>
-  request(`${BASE}/auth/staff/profile`, {
-    headers: buildHeaders(token),
-  });
+  request(`${BASE}/auth/staff/profile`, { headers: buildHeaders(token) });
 
-export const registerOrganiser = (data) =>
-  request(`${BASE}/auth/organiser/register`, {
-    method: "POST",
-    headers: buildHeaders(),
-    body: JSON.stringify(data),
-  });
+export const registerOrganiser = (formData) =>
+  request(`${BASE}/auth/organiser/register`, { method: "POST", body: formData });
 
-export const loginOrganiser = (data) =>
-  request(`${BASE}/auth/organiser/login`, {
-    method: "POST",
-    headers: buildHeaders(),
-    body: JSON.stringify(data),
-  });
+export const sendOtp = (data) =>
+  request(`${BASE}/auth/organiser/send-otp`, { method: "POST", body: data });
+
+export const loginOrganiser = (credentials) =>
+  request(`${BASE}/auth/organiser/login`, { method: "POST", body: credentials });
 
 export const getOrganiserProfile = (token) =>
-  request(`${BASE}/auth/organiser/profile`, {
-    headers: buildHeaders(token),
-  });
+  request(`${BASE}/auth/organiser/profile`, { headers: buildHeaders(token) });
 
 /** ======================= Staff APIs ======================= */
-export const getAllStaff = (token) =>
-  request(`${BASE}/staff`, {
-    headers: buildHeaders(token),
-  });
+export const getAllStaff = (token, params = {}) =>
+  request(`${BASE}/staff`, { headers: buildHeaders(token), params });
 
 export const getStaffById = (id, token) =>
-  request(`${BASE}/staff/${id}`, {
-    headers: buildHeaders(token),
-  });
+  request(`${BASE}/staff/${id}`, { headers: buildHeaders(token) });
 
 export const updateStaff = (id, data, token) =>
   request(`${BASE}/staff/${id}`, {
     method: "PUT",
-    headers: buildHeaders(token),
-    body: JSON.stringify(data),
+    body: data,
+    headers: buildHeaders(token, data),
   });
 
 /** ======================= Event APIs ======================= */
-export const getEvents = (token) =>
-  request(`${BASE}/events`, {
-    headers: buildHeaders(token),
-  });
+export const getEvents = (token, params = {}) =>
+  request(`${BASE}/events`, { headers: buildHeaders(token), params });
 
 export const getEventById = (id, token) =>
-  request(`${BASE}/events/${id}`, {
-    headers: buildHeaders(token),
-  });
+  request(`${BASE}/events/${id}`, { headers: buildHeaders(token) });
 
 export const createEvent = (data, token) =>
   request(`${BASE}/events`, {
     method: "POST",
-    headers: buildHeaders(token),
-    body: JSON.stringify(data),
+    body: data,
+    headers: buildHeaders(token, data),
   });
 
 export const updateEvent = (id, data, token) =>
   request(`${BASE}/events/${id}`, {
     method: "PUT",
-    headers: buildHeaders(token),
-    body: JSON.stringify(data),
+    body: data,
+    headers: buildHeaders(token, data),
   });
 
 export const deleteEvent = (id, token) =>
-  request(`${BASE}/events/${id}`, {
-    method: "DELETE",
-    headers: buildHeaders(token),
-  });
+  request(`${BASE}/events/${id}`, { method: "DELETE", headers: buildHeaders(token) });
 
 /** ======================= Feedback / Ratings ======================= */
 export const submitFeedback = (eventId, data, token) =>
   request(`${BASE}/events/${eventId}/feedback`, {
     method: "POST",
-    headers: buildHeaders(token),
-    body: JSON.stringify(data),
+    body: data,
+    headers: buildHeaders(token, data),
   });
 
 /** ======================= Utility ======================= */
-// Example: generic GET with token
-export const fetchWithToken = (endpoint, token) =>
-  request(`${BASE}${endpoint}`, {
-    headers: buildHeaders(token),
-  });
+export const fetchWithToken = (endpoint, token, params = {}) =>
+  request(`${BASE}${endpoint}`, { headers: buildHeaders(token), params });

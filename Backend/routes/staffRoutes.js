@@ -4,59 +4,19 @@ const staffController = require("../controllers/staffController");
 const auth = require("../middlewares/auth");
 const role = require("../middlewares/roles");
 const upload = require("../middlewares/upload");
-const {
-  validate,
-  userRegisterValidator,
-  userLoginValidator,
-} = require("../middlewares/validationMiddleware");
+const { validate, userRegisterValidator, userLoginValidator } = require("../middlewares/validationMiddleware");
 
-// =====================
-// ✅ Public Routes
-// =====================
+router.post("/register", upload.single("profilePic"), userRegisterValidator, validate, staffController.register);
+router.post("/login", userLoginValidator, validate, staffController.login);
 
-// Staff registration
-router.post(
-  "/register",
-  upload.single("profilePic"),
-  userRegisterValidator,
-  validate,
-  staffController.register
-);
-
-// Staff login
-router.post(
-  "/login",
-  userLoginValidator,
-  validate,
-  staffController.login
-);
-
-// =====================
-// ✅ Protected Routes (staff only)
-// =====================
-
-// Get staff profile
 router.get("/profile", auth, role("staff"), staffController.getProfile);
-
-// Update staff profile
 router.put("/profile", auth, role("staff"), staffController.updateProfile);
+router.get("/events/nearby", auth, role("staff"), staffController.getAvailableEvents);
+router.post("/events/:eventId/apply", auth, role("staff"), staffController.applyForEvent);
+router.post("/events/:eventId/cancel", auth, role("staff"), staffController.cancelApplication);
+router.get("/applications", auth, role("staff"), staffController.getMyApplications);
 
-// Get events assigned to staff
-router.get("/events", auth, role("staff"), staffController.getStaffEvents);
-
-// =====================
-// ✅ Routes for organisers (staff management)
-// =====================
-
-// Rate a staff member
-router.post(
-  "/:staffId/rate",
-  auth,
-  role("organiser"),
-  staffController.rateStaff
-);
-
-// Get all staff (organiser can filter nearby)
+router.post("/:staffId/rate", auth, role("organiser"), staffController.rateStaff);
 router.get("/", auth, role("organiser"), staffController.getStaff);
 
 module.exports = router;

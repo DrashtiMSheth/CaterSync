@@ -8,11 +8,27 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     phone: { type: String, required: true },
     role: { type: String, default: "user" },
+    profilePic: { type: String, default: "" }, 
+    notifications: [
+      {
+        type: { type: String },
+        message: { type: String },
+        relatedEvent: { type: mongoose.Schema.Types.ObjectId, ref: "Event" },
+        read: { type: Boolean, default: false },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+    appliedEvents: [
+      {
+        event: { type: mongoose.Schema.Types.ObjectId, ref: "Event" },
+        status: { type: String, enum: ["pending", "accepted", "rejected"], default: "pending" },
+        appliedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );
 
-// ✅ Pre-save hook for password hashing
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   try {
@@ -24,7 +40,6 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-// ✅ Compare password method
 userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

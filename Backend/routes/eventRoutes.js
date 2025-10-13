@@ -1,66 +1,56 @@
-// routes/eventRoutes.js
 const express = require("express");
-const organiserController = require("../controllers/organiserController");
-const staffController = require("../controllers/staffController");
+const eventController = require("../controllers/eventController");
 const auth = require("../middlewares/auth");
-const role = require("../middlewares/roles"); // optional role-based access
-
+const role = require("../middlewares/roles");
 const router = express.Router();
 
-// =====================
-// ORGANISER EVENT ROUTES
-// =====================
-
-// Create new event (organiser only)
 router.post(
   "/organiser",
   auth,
   role("organiser"),
-  organiserController.createEvent
+  eventController.createEvent
 );
 
-// Get all events created by organiser
 router.get(
   "/organiser",
   auth,
   role("organiser"),
-  organiserController.getEvents
+  eventController.getOrganiserEvents
 );
 
-// Update event (organiser only)
 router.put(
   "/organiser/:eventId",
   auth,
   role("organiser"),
-  organiserController.updateEvent
+  eventController.updateEvent
 );
 
-// Delete event (organiser only)
 router.delete(
   "/organiser/:eventId",
   auth,
   role("organiser"),
-  organiserController.deleteEvent
+  eventController.deleteEvent
 );
 
-// Assign staff to event (organiser only)
 router.post(
-  "/organiser/assign-staff",
+  "/organiser/review-application",
   auth,
   role("organiser"),
-  organiserController.assignStaff
+  eventController.reviewApplication
 );
 
-// =====================
-// STAFF EVENT ROUTES
-// =====================
-
-// Get events assigned to staff
 router.get(
   "/staff",
   auth,
   role("staff"),
-  staffController.getStaffEvents
+  eventController.getStaffEvents
+);
+
+router.post(
+  "/staff/apply",
+  auth,
+  role("staff"),
+  eventController.applyForEvent
 );
 
 module.exports = router;

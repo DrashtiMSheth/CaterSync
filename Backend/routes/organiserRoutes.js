@@ -13,18 +13,16 @@ const {
   createEventValidator,
 } = require("../middlewares/validationMiddleware");
 
-// ✅ Ensure uploads folder exists
 const uploadDir = path.join(__dirname, "..", "uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
-// ✅ Multer setup for logo upload
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
 });
+
 const upload = multer({ storage });
 
-// ✅ Validation result handler
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty())
@@ -32,9 +30,6 @@ const validate = (req, res, next) => {
   next();
 };
 
-// =====================
-// ✅ Public routes
-// =====================
 router.post(
   "/register",
   upload.single("companyLogo"),
@@ -42,21 +37,23 @@ router.post(
   validate,
   organiserController.register
 );
+
 router.post("/login", organiserLoginValidator, validate, organiserController.login);
 
-// =====================
-// ✅ Protected routes (organiser only)
-// =====================
 router.get("/events", auth, role("organiser"), organiserController.getEvents);
+
 router.post(
   "/events",
   auth,
   role("organiser"),
+  upload.array("attachments", 5), 
   createEventValidator,
   validate,
   organiserController.createEvent
 );
+
 router.get("/profile", auth, role("organiser"), organiserController.getProfile);
-router.put("/profile", auth, role("organiser"), organiserController.updateProfile);
+
+router.put("/profile", auth, role("organiser"), upload.single("companyLogo"), organiserController.updateProfile);
 
 module.exports = router;

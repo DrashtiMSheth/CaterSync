@@ -1,17 +1,27 @@
-// middlewares/upload.js
 const multer = require("multer");
 const path = require("path");
 
-// Storage settings
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"), // folder to save uploads
-  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)), // timestamped filename
+  destination: (req, file, cb) => cb(null, "uploads/"), 
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const ext = path.extname(file.originalname);
+    cb(null, `${timestamp}-${file.originalname.replace(/\s+/g, "_")}`);
+  },
 });
 
-// File filter
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
-  cb(null, allowedTypes.includes(file.mimetype));
+  const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
+  if (!allowedTypes.includes(file.mimetype)) {
+    return cb(new Error("Invalid file type. Only JPEG, PNG, JPG, and PDF are allowed."));
+  }
+  cb(null, true);
 };
 
-module.exports = multer({ storage, fileFilter });
+const limits = {
+  fileSize: 200 * 1024 * 1024, 
+};
+
+const upload = multer({ storage, fileFilter, limits });
+
+module.exports = upload;

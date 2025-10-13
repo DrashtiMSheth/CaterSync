@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import io from "socket.io-client";
+import axios from "axios";
 
-
+const socket = io("http://localhost:5050");
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -53,11 +55,11 @@ function LocationSelector({ form, setForm }) {
 }
 
 export default function OrganiserDashboard({ bubbleCount = 25 }) {
-  const initialStaff = [
-    { id: 1, name: "Alice", rating: 4, payment: 100, lat: 19.07, lon: 72.87, ratingsByOrganiser: {}, ratingsForOrganiser: [] },
-    { id: 2, name: "Bob", rating: 3, payment: 80, lat: 19.05, lon: 72.88, ratingsByOrganiser: {}, ratingsForOrganiser: [] },
-    { id: 3, name: "Charlie", rating: 5, payment: 120, lat: 19.1, lon: 72.85, ratingsByOrganiser: {}, ratingsForOrganiser: [] },
-  ];
+  // const initialStaff = [
+  //   { id: 1, name: "Alice", rating: 4, payment: 100, lat: 19.07, lon: 72.87, ratingsByOrganiser: {}, ratingsForOrganiser: [] },
+  //   { id: 2, name: "Bob", rating: 3, payment: 80, lat: 19.05, lon: 72.88, ratingsByOrganiser: {}, ratingsForOrganiser: [] },
+  //   { id: 3, name: "Charlie", rating: 5, payment: 120, lat: 19.1, lon: 72.85, ratingsByOrganiser: {}, ratingsForOrganiser: [] },
+  // ];
 
   const initialEvents = [
 { id: 1, name: "Event A", startDate: "2025-09-20", endDate: "2025-09-20", priority: "High", required: 10, applied: 10, lat: 19.06, lon: 72.86, staff: {}, specialReqs: [], attachments: [] },
@@ -71,10 +73,8 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
   const initialForm = {
     eventName: "",
     eventType: "",
-    startDate: "",
-    startTime: "",
-    endDate: "",
-    endTime: "",
+   startDateTime: "",  
+  endDateTime: "", 
     location: "",
     lat: 19.07,
     lon: 72.87,
@@ -98,8 +98,8 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
-  const [events, setEvents] = useState(initialEvents);
-  const [staff] = useState(initialStaff);
+  const [events, setEvents] = useState([]);
+  // const [staff] = useState(initialStaff);
   const [bubbles, setBubbles] = useState([]);
   const [showCreatePage, setShowCreatePage] = useState(false);
   const [form, setForm] = useState(initialForm);
@@ -119,8 +119,9 @@ const handleDeleteRating = (index) => {
   setStaffRatings(prev => prev.filter((_, i) => i !== index));
 };
 const [editingEvent, setEditingEvent] = useState(null);
- 
-
+ const [applications, setApplications] = useState([]); // holds staff applications
+const [staff, setStaff] = useState([]); // fetched via API instead of static list
+// const [colorMode, setColorMode] = useState(false);
 
 
 const handleEditRating = (index) => {
@@ -131,6 +132,16 @@ const handleEditRating = (index) => {
   setStaffPayment(r.payment);
   setStaffRatings(prev => prev.filter((_, i) => i !== index));
 };
+
+const handleEventEdit = async (id, updatedEvent) => {
+  try {
+    await axios.put(`/api/events/${id}`, updatedEvent);
+    setEvents(prev => prev.map(e => (e.id === id ? updatedEvent : e)));
+  } catch (err) {
+    console.error("Failed to update event", err);
+  }
+};
+
 
 // State for filters & sorting
 const [filterEvent, setFilterEvent] = useState("");
@@ -170,16 +181,17 @@ const sortedReviews = [...reviews].sort((a, b) => {
 });
 
 
-  const organiserAvgRating = () => {
-    const allRatings = staff.flatMap((s) => s.ratingsForOrganiser);
-    if (allRatings.length === 0) return 0;
-    return (allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(1);
-  };
+  // const organiserAvgRating = () => {
+  //   const allRatings = staff.flatMap((s) => s.ratingsForOrganiser);
+  //   if (allRatings.length === 0) return 0;
+  //   return (allRatings.reduce((a, b) => a + b, 0) / allRatings.length).toFixed(1);
+  // };
 
   const menuItems = [
     { name: "Dashboard", icon: "🏠" },
     { name: "Current Events", icon: "📅" },
     { name: "Upcoming Events", icon: "⏳" },
+    { name: "Staff Applications", icon: "📄" },
     { name: "Staff List", icon: "👥" },
     { name: "Ratings", icon: "⭐" },
     { name: "Profile", icon: "👤" },
@@ -196,11 +208,73 @@ const sortedReviews = [...reviews].sort((a, b) => {
     setBubbles(generated);
   }, [bubbleCount]);
 
+  useEffect(() => {
+  // Fetch staff + events on mount
+  axios.get("/api/staff").then(res => setStaff(res.data));
+  axios.get("/api/events").then(res => setEvents(res.data));
+
+  // SOCKET EVENTS
+  socket.on("staffApplied", (data) => {
+    // Only add if not duplicate
+    setApplications(prev => {
+      if (prev.some(a => a.staffId === data.staffId && a.eventId === data.eventId)) return prev;
+      return [...prev, data];
+    });
+
+    // Notification
+    setNotifications(prev => [
+      ...prev,
+      { id: Date.now(), type: "apply", message: `${data.staffName} applied for ${data.eventName}` }
+    ]);
+  });
+
+  socket.on("staffCancelled", (data) => {
+    setApplications(prev => prev.filter(a => a.staffId !== data.staffId));
+    setNotifications(prev => [
+      ...prev,
+      { id: Date.now(), type: "cancel", message: `${data.staffName} cancelled their application` }
+    ]);
+  });
+
+  socket.on("eventUpdated", (data) => {
+    setNotifications(prev => [
+      ...prev,
+      { id: Date.now(), type: "update", message: `${data.eventName} was updated (${data.changeType})` }
+    ]);
+  });
+
+  socket.on("ratingReceived", (data) => {
+    setNotifications(prev => [
+      ...prev,
+      { id: Date.now(), type: "rating", message: `${data.staffName} rated you ⭐ ${data.rating}` }
+    ]);
+  });
+
+  return () => socket.disconnect();
+}, []);
+
+
+  useEffect(() => {
+  const fetchEvents = async () => {
+    try {
+      const res = await axios.get("/api/events");
+      setEvents(res.data);
+    } catch (err) {
+      console.error("Failed to fetch events", err);
+    }
+  };
+
+  fetchEvents();
+}, []);
+
+
+
   const handleChange = (e) => { const { name, value } = e.target; setForm(prev => ({ ...prev, [name]: value })); };
   const handleStaffChange = (role, value) => { setForm(prev => ({ ...prev, staff: { ...prev.staff, [role]: parseInt(value)||0 } })); };
   const handleSpecialReqsChange = (e) => { const options = Array.from(e.target.selectedOptions, option => option.value); setForm(prev => ({ ...prev, specialReqs: options })); };
   const handleFileChange = (e) => { setForm(prev => ({ ...prev, attachments: Array.from(e.target.files) })); };
 
+  
   const handleSubmit = () => {
     if (!form.eventName || !form.startDate) return alert("Event Name & Start Date required");
     setEvents(prev => [
@@ -208,10 +282,8 @@ const sortedReviews = [...reviews].sort((a, b) => {
   { 
     id: prev.length + 1,
     name: form.eventName,
-    startDate: form.startDate,
-    startTime: form.startTime,
-    endDate: form.endDate,
-    endTime: form.endTime,
+   startDateTime: new Date(`${form.startDate}T${form.startTime}`).toISOString(),
+  endDateTime: new Date(`${form.endDate}T${form.endTime}`).toISOString(),
     location: form.location,
     lat: parseFloat(form.lat) || 0,
     lon: parseFloat(form.lon) || 0,
@@ -245,14 +317,50 @@ const sortedReviews = [...reviews].sort((a, b) => {
   const handleAccept = (id) => { setNotifications(prev => prev.filter(n => n.id !== id)); alert("Application Accepted ✅"); };
   const handleReject = (id) => { setNotifications(prev => prev.filter(n => n.id !== id)); alert("Application Rejected ❌"); };
 
+  const handleRating = async (staffId, rating) => {
+  try {
+    await axios.post(`/api/staff/${staffId}/rating`, { rating });
+    setStaff(prev =>
+      prev.map(s => (s.id === staffId ? { ...s, rating } : s))
+    );
+  } catch (err) {
+    console.error("Failed to update rating", err);
+  }
+};
+
+const handleProfileUpdate = async () => {
+  try {
+    await axios.put("/api/organiser/profile", form);
+    alert("Profile updated!");
+  } catch (err) {
+    console.error("Failed to update profile", err);
+  }
+};
+
+
   return (
     <div style={{ display:"flex", height:"100vh", fontFamily:"Arial,sans-serif", position:"relative", overflow:"hidden" }}>
-      {/* Bubbles */}
-      {bubbles.map((b,i)=>(<div key={i} style={{
-        position:"absolute", bottom:`-${b.size}px`, left:b.left, width:`${b.size}px`, height:`${b.size}px`,
-        borderRadius:"50%", background:"rgba(255,255,255,0.9)", opacity:b.opacity,
-        animation:`floatUp ${b.duration}s linear ${b.delay}s infinite`, zIndex:1, pointerEvents:"none"
-      }}/>))}
+
+     {/* ---- Bubble/Color Effect ---- */}
+   {bubbles.map((b, i) => (
+  <div
+    key={i}
+    style={{
+      position: "absolute",
+      bottom: `-${b.size}px`,
+      left: b.left,
+      width: `${b.size}px`,
+      height: `${b.size}px`,
+      borderRadius: "50%",
+      background: `rgba(255,255,255,0.8)`,
+      opacity: b.opacity,
+      animation: `floatUp ${b.duration}s linear ${b.delay}s infinite`,
+      zIndex: 1,
+      pointerEvents: "none",
+    }}
+  />
+))}
+
 
       {/* Sidebar */}
       <div style={{ width: sidebarOpen ? 220 : 60, background:"#1f2937", color:"#fff", transition:"width 0.3s", display:"flex", flexDirection:"column", zIndex:2 }}>
@@ -291,16 +399,12 @@ const sortedReviews = [...reviews].sort((a, b) => {
               </div>
             )}
           </div>
-          <img
-  src={
-    form.companyLogo
-      ? URL.createObjectURL(form.companyLogo)
-      : "https://i.pravatar.cc/40"
-  }
-  alt="profile"
-  style={{ borderRadius: "50%", cursor: "pointer" }}
-  onClick={() => setActiveTab("Profile")}
-/>
+         <img
+      src={form.companyLogo ? URL.createObjectURL(form.companyLogo) : "https://i.pravatar.cc/150"}
+      alt="profile"
+      style={{ borderRadius: "50%", width: 150, height: 150, cursor: "pointer" }}
+      onClick={() => window.open(form.companyLogo ? URL.createObjectURL(form.companyLogo) : "https://i.pravatar.cc/300", "_blank")}
+    />
 
 
           <button onClick={()=>{localStorage.removeItem("token"); window.location.href="/"}} style={{ background:"#374151", color:"#fff", border:"none", padding:"8px 12px", borderRadius:5, cursor:"pointer", fontWeight:"bold" }}>Logout</button>
@@ -379,10 +483,12 @@ const sortedReviews = [...reviews].sort((a, b) => {
             .map((event) => (
               <tr key={event.id}>
                 <td style={tdStyle}>{event.name}</td>
-                <td style={tdStyle}>{event.startDate}</td>
-                <td style={tdStyle}>{event.startTime || "-"}</td>
-                <td style={tdStyle}>{event.endDate || "-"}</td>
-                <td style={tdStyle}>{event.endTime || "-"}</td>
+                <td style={tdStyle}>
+  {event.startDateTime ? event.startDateTime.replace("T", " ") : "-"}
+</td>
+<td style={tdStyle}>
+  {event.endDateTime ? event.endDateTime.replace("T", " ") : "-"}
+</td>
                 <td style={tdStyle}>{event.location || "-"}</td>
                 <td style={tdStyle}>{event.priority || "-"}</td>
                 <td style={tdStyle}>
@@ -397,23 +503,23 @@ const sortedReviews = [...reviews].sort((a, b) => {
                 <td style={tdStyle}>
                   {event.attachments ? event.attachments.length + " file(s)" : 0}
                 </td>
-                <td style={{ width: "200px" }}>
-                  <div style={{ background: "#eee", borderRadius: "8px", height: "20px" }}>
-                    <div
-                      style={{
-                        width: `${(event.appliedStaff / event.requiredStaff) * 100 || 0}%`,
-                        background: "green",
-                        height: "100%",
-                        borderRadius: "8px",
-                        textAlign: "center",
-                        color: "white",
-                        fontSize: "12px"
-                      }}
-                    >
-                      {event.appliedStaff || 0}/{event.requiredStaff || 0}
-                    </div>
-                  </div>
-                </td>
+              <td style={{ width: "200px" }}>
+  <div style={{ background: "#eee", borderRadius: "8px", height: "20px" }}>
+    <div
+      style={{
+        width: `${Math.min((event.applied / event.required) * 100, 100)}%`,
+        background:
+          event.applied === 0 ? "#9ca3af" :
+          event.applied < event.required ? "#3b82f6" :
+          "#10b981",
+        height: "100%",
+        borderRadius: "8px",
+        transition: "width 0.3s ease",
+      }}
+    ></div>
+  </div>
+</td>
+
                 {activeTab === "Upcoming Events" && (
                   <td>
                     <button onClick={() => setEditingEvent(event)}>Edit</button>
@@ -442,49 +548,28 @@ const sortedReviews = [...reviews].sort((a, b) => {
       />
     </label>
     <br />
-    <label>
-      Start Date:{" "}
-      <input
-        type="date"
-        value={editingEvent.startDate}
-        onChange={(e) =>
-          setEditingEvent({ ...editingEvent, startDate: e.target.value })
-        }
-      />
-    </label>
-    <br />
-    <label>
-      Start Time:{" "}
-      <input
-        type="time"
-        value={editingEvent.startTime || ""}
-        onChange={(e) =>
-          setEditingEvent({ ...editingEvent, startTime: e.target.value })
-        }
-      />
-    </label>
-    <br />
-    <label>
-      End Date:{" "}
-      <input
-        type="date"
-        value={editingEvent.endDate || ""}
-        onChange={(e) =>
-          setEditingEvent({ ...editingEvent, endDate: e.target.value })
-        }
-      />
-    </label>
-    <br />
-    <label>
-      End Time:{" "}
-      <input
-        type="time"
-        value={editingEvent.endTime || ""}
-        onChange={(e) =>
-          setEditingEvent({ ...editingEvent, endTime: e.target.value })
-        }
-      />
-    </label>
+   <label>
+  Start Date & Time:
+  <input
+    type="datetime-local"
+    value={editingEvent.startDateTime || ""}
+    onChange={(e) =>
+      setEditingEvent({ ...editingEvent, startDateTime: e.target.value })
+    }
+  />
+</label>
+<br />
+<label>
+  End Date & Time:
+  <input
+    type="datetime-local"
+    value={editingEvent.endDateTime || ""}
+    onChange={(e) =>
+      setEditingEvent({ ...editingEvent, endDateTime: e.target.value })
+    }
+  />
+</label>
+
     <br />
     <label>
       Location:{" "}
@@ -569,6 +654,50 @@ const sortedReviews = [...reviews].sort((a, b) => {
   </div>
 )}
 
+    {activeTab === "Staff Applications" && (
+  <div>
+    <h2>Pending Staff Applications</h2>
+    {applications.length === 0 ? (
+      <p>No new applications</p>
+    ) : (
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            <th style={thStyle}>Staff Name</th>
+            <th style={thStyle}>Event</th>
+            <th style={thStyle}>Distance (km)</th>
+            <th style={thStyle}>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {applications.map((app) => {
+            const event = events.find(e => e.id === app.eventId);
+            const dist = getDistance(event.lat, event.lon, app.lat, app.lon).toFixed(1);
+            if (dist > 10) return null; // optional distance filter
+            return (
+              <tr key={app.id}>
+                <td style={tdStyle}>{app.staffName}</td>
+                <td style={tdStyle}>{event?.name}</td>
+                <td style={tdStyle}>{dist}</td>
+                <td style={tdStyle}>
+                  <button
+                    style={{ background: "#10b981", color: "#fff", border: "none", padding: "5px 8px", borderRadius: 4 }}
+                    onClick={() => handleAccept(app.id)}
+                  >Accept</button>
+                  <button
+                    style={{ background: "#ef4444", color: "#fff", border: "none", padding: "5px 8px", borderRadius: 4, marginLeft: 8 }}
+                    onClick={() => handleReject(app.id)}
+                  >Reject</button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    )}
+  </div>
+)}
+
 
         {/* Staff List */}
 {activeTab === "Staff List" && (
@@ -587,7 +716,19 @@ const sortedReviews = [...reviews].sort((a, b) => {
         style={{ width: "100%", marginBottom: 10, padding: 8 }}
       />
       <datalist id="staffList">
-        {staff.map((s) => <option key={s.id} value={s.name} />)}
+       {staff.map((s) => (
+  <div key={s.id}>
+    <p>{s.name}</p>
+    <input
+      type="number"
+      min={1}
+      max={5}
+      value={s.rating || 0}
+      onChange={(e) => handleRating(s.id, Number(e.target.value))}
+    />
+  </div>
+))}
+
       </datalist>
 
       <label>Rating</label>
@@ -677,9 +818,9 @@ const sortedReviews = [...reviews].sort((a, b) => {
 )}
 
 {activeTab === "Ratings" && (
-  <div className="w-full space-y-6">
+  <div className="relative w-full space-y-6 overflow-hidden">
     {/* ---- Rating Summary ---- */}
-    <div className="bg-white p-6 rounded-lg shadow-md text-center">
+    <div className="bg-white p-6 rounded-lg shadow-md text-center z-10 relative">
       <h3 className="text-xl font-semibold mb-2">Organisation Rating Overview</h3>
       <p className="text-3xl font-bold text-yellow-500">
         ⭐ {reviews.length > 0 
@@ -690,6 +831,18 @@ const sortedReviews = [...reviews].sort((a, b) => {
         Based on {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
       </p>
     </div>
+
+    {/* ---- Review List ---- */}
+    <div className="space-y-4 z-10 relative">
+      {reviews.map((r, i) => (
+        <div key={i} className="bg-white p-4 rounded-lg shadow-md">
+          <strong>{r.staff}</strong> → {r.event} <br />
+          ⭐ {r.rating} / 5 <br />
+          <em>{r.review}</em>
+        </div>
+      ))}
+    </div>
+
 
     {/* ---- Filters ---- */}
     <div className="flex flex-wrap gap-4 mb-4">

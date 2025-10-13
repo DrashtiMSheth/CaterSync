@@ -1,27 +1,22 @@
-// routes/otpRoutes.js
 const express = require("express");
 const router = express.Router();
 
-// Temporary in-memory storage for OTPs
-// { "phone": { code: 123456, expires: timestamp } }
 const otpStore = {};
 
-// -----------------------
-// Send OTP
-// -----------------------
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000);
+
 router.post("/send-otp", (req, res) => {
   const { phone } = req.body;
-  if (!phone) return res.status(400).json({ message: "Phone required" });
+  if (!phone) return res.status(400).json({ message: "Phone number is required" });
 
   try {
-    const code = Math.floor(100000 + Math.random() * 900000); // 6-digit OTP
-    const expires = Date.now() + 2 * 60 * 1000; // 2 minutes validity
+    const code = generateOTP();
+    const expires = Date.now() + 2 * 60 * 1000; 
 
     otpStore[phone] = { code, expires };
 
-    console.log(`OTP for ${phone}: ${code}`); // Log OTP in console for testing
+    console.log(`OTP for ${phone}: ${code}`); 
 
-    // Send OTP in response (for frontend testing, no SMS needed)
     res.json({ message: "OTP sent successfully", otp: code });
   } catch (err) {
     console.error("OTP send error:", err);
@@ -29,9 +24,6 @@ router.post("/send-otp", (req, res) => {
   }
 });
 
-// -----------------------
-// Verify OTP
-// -----------------------
 router.post("/verify-otp", (req, res) => {
   const { phone, otp } = req.body;
   if (!phone || !otp) return res.status(400).json({ message: "Phone and OTP required" });

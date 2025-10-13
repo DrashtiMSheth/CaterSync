@@ -1,50 +1,35 @@
 const jwt = require("jsonwebtoken");
 const Organiser = require("../models/Organiser");
 const Event = require("../models/Event");
+const Staff = require("../models/Staff");
 const path = require("path");
 
-// =====================
-// ✅ REGISTER ORGANISER
-// =====================
 exports.register = async (req, res, next) => {
   try {
-    const {
-      fullName, email, phone, password,
-      organiserName, businessType, officeAddress, website
-    } = req.body;
+    const { fullName, email, phone, password, organiserName, businessType, officeAddress = "", website = "" } = req.body;
 
-    // Check if email already exists
-    const existing = await Organiser.findOne({ email });
-    if (existing) return next({ statusCode: 400, message: "Email already registered" });
+    if (await Organiser.findOne({ email }))
+      return next({ statusCode: 400, message: "Email already registered" });
 
-    const logoPath = req.file ? path.join("uploads", req.file.filename) : null;
+    const logo = req.file ? path.join("uploads", req.file.filename) : "";
 
     const newOrg = new Organiser({
       fullName, email, phone, password,
-      organiserName, businessType,
-      officeAddress: officeAddress || "",
-      website: website || "",
-      logo: logoPath
+      organiserName, businessType, officeAddress, website, logo
     });
 
     await newOrg.save();
 
-    const token = jwt.sign(
-      { id: newOrg._id, role: "organiser" },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
+    const token = jwt.sign({ id: newOrg._id, role: "organiser" }, process.env.JWT_SECRET, { expiresIn: "1d" });
     newOrg.password = undefined;
-    res.status(201).json({ message: "Organiser registered successfully", user: newOrg, token });
+
+    res.status(201).json({ success: true, message: "Organiser registered", organiser: newOrg, token });
   } catch (err) {
+    console.error("Organiser register error:", err);
     next(err);
   }
 };
 
-// =====================
-// ✅ LOGIN ORGANISER
-// =====================
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -56,148 +41,122 @@ exports.login = async (req, res, next) => {
     if (!isMatch) return next({ statusCode: 400, message: "Invalid credentials" });
 
     const token = jwt.sign({ id: org._id, role: "organiser" }, process.env.JWT_SECRET, { expiresIn: "1d" });
-
     org.password = undefined;
-    res.json({ message: "Login successful", user: org, token });
+
+    res.json({ success: true, message: "Login successful", organiser: org, token });
   } catch (err) {
+    console.error("Organiser login error:", err);
     next(err);
   }
 };
 
-// =====================
-// ✅ GET ORGANISER PROFILE
-// =====================
 exports.getProfile = async (req, res, next) => {
   try {
     const organiser = await Organiser.findById(req.user.id);
     if (!organiser) return next({ statusCode: 404, message: "Organiser not found" });
+
     organiser.password = undefined;
-    res.json({ organiser });
+    res.json({ success: true, organiser });
   } catch (err) {
+    console.error("Get organiser profile error:", err);
     next(err);
   }
 };
 
-// =====================
-// ✅ UPDATE ORGANISER PROFILE
-// =====================
 exports.updateProfile = async (req, res, next) => {
   try {
     const updates = req.body;
     const organiser = await Organiser.findByIdAndUpdate(req.user.id, updates, { new: true });
     if (!organiser) return next({ statusCode: 404, message: "Organiser not found" });
+
     organiser.password = undefined;
-    res.json({ message: "Profile updated", organiser });
+    res.json({ success: true, message: "Profile updated", organiser });
   } catch (err) {
+    console.error("Update organiser profile error:", err);
     next(err);
   }
 };
 
-// =====================
-// ✅ CREATE EVENT
-// =====================
 exports.createEvent = async (req, res, next) => {
   try {
-    const { name, date, priority = 1, required = 1, lat, lon } = req.body;
+    const { name, description = "", location, startDateTime, endDateTime, priority = 1, requiredStaff = 1, attachments = [] } = req.body;
 
-    if (!name || !date || !lat || !lon) {
+    if (!name || !location?.address || !location?.lat || !location?.lng || !startDateTime || !endDateTime) {
       return next({ statusCode: 400, message: "Missing required fields" });
     }
 
     const newEvent = new Event({
-      name, date, priority, required,
-      lat, lon,
+      name,
+      description,
+      location,
+      startDateTime,
+      endDateTime,
+      priority,
+      requiredStaff,
       organiser: req.user.id,
+      attachments,
       approved: true,
-      staffAssigned: [],
-      applied: 0
+      applications: []
     });
 
     await newEvent.save();
-    res.status(201).json({ message: "Event created successfully", event: newEvent });
+    res.status(201).json({ success: true, message: "Event created successfully", event: newEvent });
   } catch (err) {
+    console.error("Create event error:", err);
     next(err);
   }
 };
 
-// =====================
-// ✅ GET ALL ORGANISER EVENTS
-// =====================
 exports.getEvents = async (req, res, next) => {
   try {
     const events = await Event.find({ organiser: req.user.id })
-      .populate("staffAssigned", "fullName email phone role")
-      .sort({ date: 1 });
-
-    res.json({ events });
+      .populate("applications.staff", "fullName email phone profilePic")
+      .sort({ startDateTime: 1 });
+    res.json({ success: true, events });
   } catch (err) {
+    console.error("Get events error:", err);
     next(err);
   }
 };
 
-// =====================
-// ✅ ASSIGN STAFF TO EVENT
-// =====================
-exports.assignStaff = async (req, res, next) => {
+exports.handleApplication = async (req, res, next) => {
   try {
-    const { eventId, staffIds } = req.body;
+    const { eventId, staffId, action } = req.body;
 
-    const event = await Event.findById(eventId);
+    const event = await Event.findById(eventId).populate("organiser");
     if (!event) return next({ statusCode: 404, message: "Event not found" });
+    if (event.organiser._id.toString() !== req.user.id) return next({ statusCode: 403, message: "Unauthorized" });
 
-    if (event.organiser.toString() !== req.user.id) {
-      return next({ statusCode: 403, message: "Unauthorized" });
-    }
+    const app = event.applications.find(a => a.staff.toString() === staffId);
+    if (!app) return next({ statusCode: 404, message: "Application not found" });
+    if (!["accept", "reject"].includes(action)) return next({ statusCode: 400, message: "Invalid action" });
 
-    event.staffAssigned = staffIds;
+    app.status = action === "accept" ? "accepted" : "rejected";
     await event.save();
 
-    res.json({ success: true, message: "Staff assigned successfully", event });
+    const io = req.app.get("io");
+    if (io) {
+      io.to(staffId).emit("application-status-changed", { eventId, status: app.status });
+    }
+
+    res.json({ success: true, message: `Application ${app.status}`, event });
   } catch (err) {
+    console.error("Handle application error:", err);
     next(err);
   }
 };
 
-// =====================
-// ✅ UPDATE EVENT
-// =====================
-exports.updateEvent = async (req, res, next) => {
+exports.getEventApplications = async (req, res, next) => {
   try {
     const { eventId } = req.params;
 
-    const event = await Event.findById(eventId);
+    const event = await Event.findById(eventId)
+      .populate("applications.staff", "fullName email phone profilePic");
     if (!event) return next({ statusCode: 404, message: "Event not found" });
 
-    if (event.organiser.toString() !== req.user.id) {
-      return next({ statusCode: 403, message: "Unauthorized" });
-    }
-
-    Object.assign(event, req.body);
-    await event.save();
-
-    res.json({ success: true, message: "Event updated", event });
+    res.json({ success: true, applications: event.applications });
   } catch (err) {
-    next(err);
-  }
-};
-
-// =====================
-// ✅ DELETE EVENT
-// =====================
-exports.deleteEvent = async (req, res, next) => {
-  try {
-    const { eventId } = req.params;
-
-    const event = await Event.findById(eventId);
-    if (!event) return next({ statusCode: 404, message: "Event not found" });
-
-    if (event.organiser.toString() !== req.user.id) {
-      return next({ statusCode: 403, message: "Unauthorized" });
-    }
-
-    await event.remove();
-    res.json({ success: true, message: "Event deleted" });
-  } catch (err) {
+    console.error("Get event applications error:", err);
     next(err);
   }
 };
