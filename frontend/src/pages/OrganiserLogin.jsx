@@ -58,12 +58,20 @@ export default function OrganiserLogin({ go, loading, setLoading }) {
       emitEvent("organiser-login", { email: data.user?.email || form.email });
       go("organiser-dashboard");
     } catch (err) {
-      const message = err.message || "Invalid credentials";
-      setFeedback(message);
+      const msg = (err.message || "Invalid credentials").toLowerCase();
       setShake(true);
       setTimeout(() => setShake(false), 500);
-      if (message.toLowerCase().includes("email")) setErrors({ email: "Email didn’t match" });
-      else if (message.toLowerCase().includes("password")) setErrors({ password: "Password didn’t match" });
+      if (msg.includes("email")) {
+        setFeedback("Invalid email");
+        setErrors({ email: "Invalid email" });
+      } else if (msg.includes("password")) {
+        setFeedback("Invalid password");
+        setErrors({ password: "Invalid password" });
+      } else {
+        // Generic case (e.g., both wrong): show generic invalid credentials
+        setFeedback("Invalid credentials");
+        setErrors({});
+      }
     } finally {
       setLoading(false);
     }

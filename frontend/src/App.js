@@ -57,14 +57,6 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* Persistent Logout button on dashboards */}
-      {(route === "organiser-dashboard" || route === "staff-dashboard") && (
-        <button className="logout-btn" onClick={() => logout()}>
-          Logout
-        </button>
-      )}
-
-      {/* Render current page */}
       {renderPage()}
     </div>
   );

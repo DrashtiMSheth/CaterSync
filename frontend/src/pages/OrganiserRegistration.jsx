@@ -33,6 +33,7 @@ export default function OrganiserRegistration({ go }) {
   const [preview, setPreview] = useState(null);
   const [otpCountdown, setOtpCountdown] = useState(0);
   const [otpToken, setOtpToken] = useState("");
+  const [serverOtp, setServerOtp] = useState(""); // Dev helper: show OTP returned by backend
   const [passwordStrength, setPasswordStrength] = useState({ label: "", color: "" });
   const [completedSteps, setCompletedSteps] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
@@ -106,8 +107,11 @@ export default function OrganiserRegistration({ go }) {
 
     if (step === 2) {
       try {
-        const { otpToken } = await sendOtp({ email: form.email });
-        setOtpToken(otpToken);
+        // Backend expects phone at /api/otp/send-otp
+        const res = await sendOtp({ phone: form.phone });
+        // If backend returns just message/otp, we proceed without token
+        setOtpToken(res?.otpToken || "");
+        if (res?.otp) setServerOtp(String(res.otp));
         setOtpCountdown(120);
       } catch (err) {
         console.error("OTP error:", err);
@@ -138,10 +142,9 @@ export default function OrganiserRegistration({ go }) {
       payload.append("otpToken", otpToken);
 
       const response = await registerOrganiser(payload);
-      login(response.token, response.user); // auto login
-      emitEvent("notification", `${form.fullName} has registered!`); // socket notification
-      alert("✅ Registration Successful");
-      go("organiser-dashboard");
+      emitEvent("notification", `${form.fullName} has registered!`);
+      alert("✅ Registration successful. Please log in.");
+      go("organiser-login");
     } catch (err) {
       console.error("Registration error:", err);
       alert("❌ Registration failed");
@@ -284,6 +287,20 @@ export default function OrganiserRegistration({ go }) {
                   </span>
                 </div>
                 {errors.otp && <p style={{ color: "red", fontSize: 12 }}>{errors.otp}</p>}
+
+                {/* Dev-only helper: show OTP returned by backend (not for production) */}
+                {serverOtp && (
+                  <div style={{ marginTop: 8, fontSize: 12, color: "#0f766e", background: "#ccfbf1", padding: 8, borderRadius: 6 }}>
+                    OTP is <strong>{serverOtp}</strong>
+                    <button
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, otp: serverOtp }))}
+                      style={{ marginLeft: 10, padding: "4px 8px", borderRadius: 4, border: "none", background: "#14b8a6", color: "#fff", cursor: "pointer" }}
+                    >
+                      Autofill
+                    </button>
+                  </div>
+                )}
 
                 <div style={{ height: 8, background: "#555", borderRadius: 4, marginTop: 8 }}>
                   <div style={{ height: "100%", width: `${(otpCountdown / 120) * 100}%`, background: "#00ffcc", borderRadius: 4, transition: "width 1s linear" }} />

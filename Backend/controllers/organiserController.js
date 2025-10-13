@@ -8,8 +8,14 @@ exports.register = async (req, res, next) => {
   try {
     const { fullName, email, phone, password, organiserName, businessType, officeAddress = "", website = "" } = req.body;
 
-    if (await Organiser.findOne({ email }))
-      return next({ statusCode: 400, message: "Email already registered" });
+    // Pre-check for duplicates to avoid 500s from unique indexes
+    const existing = await Organiser.findOne({ $or: [{ email }, { phone }] });
+    if (existing) {
+      if (existing.email === email)
+        return next({ statusCode: 400, message: "Email already registered" });
+      if (existing.phone === phone)
+        return next({ statusCode: 400, message: "Phone already registered" });
+    }
 
     const logo = req.file ? path.join("uploads", req.file.filename) : "";
 
@@ -35,10 +41,10 @@ exports.login = async (req, res, next) => {
     const { email, password } = req.body;
 
     const org = await Organiser.findOne({ email });
-    if (!org) return next({ statusCode: 400, message: "Invalid credentials" });
+    if (!org) return next({ statusCode: 400, message: "Invalid email" });
 
     const isMatch = await org.comparePassword(password);
-    if (!isMatch) return next({ statusCode: 400, message: "Invalid credentials" });
+    if (!isMatch) return next({ statusCode: 400, message: "Invalid password" });
 
     const token = jwt.sign({ id: org._id, role: "organiser" }, process.env.JWT_SECRET, { expiresIn: "1d" });
     org.password = undefined;

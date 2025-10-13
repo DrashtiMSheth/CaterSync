@@ -45,4 +45,22 @@ router.get("/staff/profile", auth, staffController.getProfile);
 
 router.put("/staff/profile", auth, staffController.updateProfile);
 
+router.post("/organiser/send-otp", (req, res) => {
+  const { phone } = req.body;
+  if (!phone) return res.status(400).json({ message: "Phone number is required" });
+
+  try {
+    const code = generateOTP();
+    const expires = Date.now() + 2 * 60 * 1000; 
+
+    otpStore[phone] = { code, expires };
+
+    console.log(`OTP for ${phone}: ${code}`); 
+
+    res.json({ message: "OTP sent successfully", otp: code });
+  } catch (err) {
+    console.error("OTP send error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 module.exports = router;

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import io from "socket.io-client";
 import axios from "axios";
+import socket from "../utils/socket";
+import { getEvents, getAllStaff } from "../api/api";
 
-const socket = io("http://localhost:5050");
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -104,11 +104,18 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
   const [showCreatePage, setShowCreatePage] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [notifications, setNotifications] = useState([
-    { id: 1, type: "apply", message: "Alice applied for Event A", staff: "Alice", event: "Event A" },
-    { id: 2, type: "rating", message: "Bob rated your organisation ⭐ 4", staff: "Bob" },
-    { id: 3, type: "warning", message: "Charlie tried to apply twice for Event B" },
+    { id: 1, type: "apply", message: "Alice applied for Event A", staff: "Alice", event: "Event A", status: "pending", createdAt: Date.now() - 1000 * 60 * 60 },
+    { id: 2, type: "rating", message: "Bob rated your organisation ⭐ 4", staff: "Bob", status: "info", createdAt: Date.now() - 1000 * 60 * 30 },
+    { id: 3, type: "warning", message: "Charlie tried to apply twice for Event B", status: "warning", createdAt: Date.now() - 1000 * 60 * 5 },
+    { id: 4, type: "apply", message: "Alice applied for Event A", staff: "Alice", event: "Event A", status: "pending", createdAt: Date.now() - 1000 * 60 * 60 },
+    { id: 5, type: "rating", message: "Bob rated your organisation ⭐ 4", staff: "Bob", status: "info", createdAt: Date.now() - 1000 * 60 * 30 },
+    { id: 6, type: "warning", message: "Charlie tried to apply twice for Event B", status: "warning", createdAt: Date.now() - 1000 * 60 * 5 },
+    { id: 7, type: "apply", message: "Alice applied for Event A", staff: "Alice", event: "Event A", status: "pending", createdAt: Date.now() - 1000 * 60 * 60 },
+    { id: 8, type: "rating", message: "Bob rated your organisation ⭐ 4", staff: "Bob", status: "info", createdAt: Date.now() - 1000 * 60 * 30 },
+    { id: 9, type: "warning", message: "Charlie tried to apply twice for Event B", status: "warning", createdAt: Date.now() - 1000 * 60 * 5 },
   ]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showProfilePreview, setShowProfilePreview] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [staffRatings, setStaffRatings] = useState([]);
 const [staffSearch, setStaffSearch] = useState("");
@@ -135,7 +142,12 @@ const handleEditRating = (index) => {
 
 const handleEventEdit = async (id, updatedEvent) => {
   try {
-    await axios.put(`/api/events/${id}`, updatedEvent);
+    const token = localStorage.getItem("organiserToken");
+    // Fallback to axios with BASE when we add an API helper
+    await axios.put(`${process.env.REACT_APP_API_URL || "http://localhost:5050/api"}/events/${id}`,
+      updatedEvent,
+      { headers: { "x-auth-token": token, "Content-Type": "application/json" } }
+    );
     setEvents(prev => prev.map(e => (e.id === id ? updatedEvent : e)));
   } catch (err) {
     console.error("Failed to update event", err);
@@ -210,8 +222,23 @@ const sortedReviews = [...reviews].sort((a, b) => {
 
   useEffect(() => {
   // Fetch staff + events on mount
-  axios.get("/api/staff").then(res => setStaff(res.data));
-  axios.get("/api/events").then(res => setEvents(res.data));
+  // Use central API helpers so BASE and headers are consistent
+  (async () => {
+    try {
+      const token = localStorage.getItem("organiserToken");
+      const staffRes = await getAllStaff(token);
+      setStaff(staffRes?.staff || staffRes || []);
+    } catch (e) {
+      console.error("Failed to fetch staff", e);
+    }
+    try {
+      const token = localStorage.getItem("organiserToken");
+      const eventsRes = await getEvents(token);
+      setEvents(eventsRes?.events || eventsRes || []);
+    } catch (e) {
+      console.error("Failed to fetch events", e);
+    }
+  })();
 
   // SOCKET EVENTS
   socket.on("staffApplied", (data) => {
@@ -221,32 +248,32 @@ const sortedReviews = [...reviews].sort((a, b) => {
       return [...prev, data];
     });
 
-    // Notification
+    // Notification (newest first)
     setNotifications(prev => [
+      { id: Date.now(), type: "apply", message: `${data.staffName} applied for ${data.eventName}`, status: "pending", createdAt: Date.now() },
       ...prev,
-      { id: Date.now(), type: "apply", message: `${data.staffName} applied for ${data.eventName}` }
     ]);
   });
 
   socket.on("staffCancelled", (data) => {
     setApplications(prev => prev.filter(a => a.staffId !== data.staffId));
     setNotifications(prev => [
+      { id: Date.now(), type: "cancel", message: `${data.staffName} cancelled their application`, status: "info", createdAt: Date.now() },
       ...prev,
-      { id: Date.now(), type: "cancel", message: `${data.staffName} cancelled their application` }
     ]);
   });
 
   socket.on("eventUpdated", (data) => {
     setNotifications(prev => [
+      { id: Date.now(), type: "update", message: `${data.eventName} was updated (${data.changeType})`, status: "info", createdAt: Date.now() },
       ...prev,
-      { id: Date.now(), type: "update", message: `${data.eventName} was updated (${data.changeType})` }
     ]);
   });
 
   socket.on("ratingReceived", (data) => {
     setNotifications(prev => [
+      { id: Date.now(), type: "rating", message: `${data.staffName} rated you ⭐ ${data.rating}`, status: "info", createdAt: Date.now() },
       ...prev,
-      { id: Date.now(), type: "rating", message: `${data.staffName} rated you ⭐ ${data.rating}` }
     ]);
   });
 
@@ -257,8 +284,9 @@ const sortedReviews = [...reviews].sort((a, b) => {
   useEffect(() => {
   const fetchEvents = async () => {
     try {
-      const res = await axios.get("/api/events");
-      setEvents(res.data);
+      const token = localStorage.getItem("organiserToken");
+      const res = await getEvents(token);
+      setEvents(res?.events || res || []);
     } catch (err) {
       console.error("Failed to fetch events", err);
     }
@@ -314,12 +342,33 @@ const sortedReviews = [...reviews].sort((a, b) => {
     } catch { alert("Error fetching location"); }
   };
 
-  const handleAccept = (id) => { setNotifications(prev => prev.filter(n => n.id !== id)); alert("Application Accepted ✅"); };
-  const handleReject = (id) => { setNotifications(prev => prev.filter(n => n.id !== id)); alert("Application Rejected ❌"); };
+  const handleAccept = (id) => {
+    setNotifications(prev => {
+      const accepted = prev.find(n => n.id === id);
+      const rest = prev.filter(n => n.id !== id);
+      if (!accepted) return prev;
+      // Keep in list, mark as accepted, move to top
+      return [ { ...accepted, status: "accepted", message: `${accepted.message} — accepted` }, ...rest ];
+    });
+    alert("Application Accepted ✅");
+  };
+  const handleReject = (id) => {
+    setNotifications(prev => {
+      const rejected = prev.find(n => n.id === id);
+      const rest = prev.filter(n => n.id !== id);
+      if (!rejected) return prev;
+      // Keep in list, mark as rejected, move to top
+      return [ { ...rejected, status: "rejected", message: `${rejected.message} — rejected` }, ...rest ];
+    });
+    alert("Application Rejected ❌");
+  };
 
   const handleRating = async (staffId, rating) => {
   try {
-    await axios.post(`/api/staff/${staffId}/rating`, { rating });
+    const token = localStorage.getItem("organiserToken");
+    await axios.post(`${process.env.REACT_APP_API_URL || "http://localhost:5050/api"}/staff/${staffId}/rating`, { rating },
+      { headers: { "x-auth-token": token, "Content-Type": "application/json" } }
+    );
     setStaff(prev =>
       prev.map(s => (s.id === staffId ? { ...s, rating } : s))
     );
@@ -330,7 +379,10 @@ const sortedReviews = [...reviews].sort((a, b) => {
 
 const handleProfileUpdate = async () => {
   try {
-    await axios.put("/api/organiser/profile", form);
+    const token = localStorage.getItem("organiserToken");
+    await axios.put(`${process.env.REACT_APP_API_URL || "http://localhost:5050/api"}/organiser/profile`, form,
+      { headers: { "x-auth-token": token, "Content-Type": "application/json" } }
+    );
     alert("Profile updated!");
   } catch (err) {
     console.error("Failed to update profile", err);
@@ -339,7 +391,8 @@ const handleProfileUpdate = async () => {
 
 
   return (
-    <div style={{ display:"flex", height:"100vh", fontFamily:"Arial,sans-serif", position:"relative", overflow:"hidden" }}>
+    <div style={{ display:"flex", height:"100vh", fontFamily:"Arial,sans-serif", position:"relative", overflow:"hidden",
+      background: "linear-gradient(120deg, #1e90ff, #00b894, #6c5ce7)", backgroundSize: "600% 600%" }}>
 
      {/* ---- Bubble/Color Effect ---- */}
    {bubbles.map((b, i) => (
@@ -375,39 +428,34 @@ const handleProfileUpdate = async () => {
       {/* Main */}
       <div style={{ flex:1, padding:20, background:"rgba(255,255,255,0.9)", overflowY:"scroll", zIndex:1, color:"#000" }}>
         {/* Top Bar */}
-        <div style={{ display:"flex", justifyContent:"flex-end", alignItems:"center", gap:20, padding:"10px 20px", borderBottom:"1px solid #e5e7eb", background:"#fff", marginBottom:15 }}>
+        <div style={{ display:"flex", justifyContent:"flex-end", alignItems:"center", gap:12, padding:"4px 8px", borderBottom:"1px solid #e5e7eb", background:"#fff", marginBottom:10 }}>
           <div style={{ background:"#fef3c7", color:"#b45309", padding:"6px 12px", borderRadius:"20px", fontWeight:"bold", fontSize:"14px" }}>
            ⭐ {reviews.length > 0 
           ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
           : "0"} / 5          </div>
           <div style={{ position:"relative" }}>
-            <span style={{ fontSize:22, cursor:"pointer" }} onClick={() => setShowDropdown(!showDropdown)}>🔔</span>
+            <span style={{ fontSize:18, cursor:"pointer" }} onClick={() => setShowDropdown(true)}>🔔</span>
             {notifications.length > 0 && <span style={{position:"absolute", top:-5, right:-5, background:"red", color:"#fff", borderRadius:"50%", fontSize:"12px", padding:"2px 6px"}}>{notifications.length}</span>}
-            {showDropdown && (
-              <div style={{position:"absolute", right:0, top:30, width:300, background:"#fff", border:"1px solid #ddd", borderRadius:6, boxShadow:"0 2px 8px rgba(0,0,0,0.15)", zIndex:10}}>
-                {notifications.length===0 ? <div style={{ padding:10, textAlign:"center" }}>No notifications</div> : notifications.map(n=>(
-                  <div key={n.id} style={{ padding:"10px", borderBottom:"1px solid #eee" }}>
-                    <div style={{ fontSize:14, marginBottom:5 }}>{n.message}</div>
-                    {n.type==="apply" && (
-                      <div style={{ display:"flex", gap:10 }}>
-                        <button onClick={()=>handleAccept(n.id)} style={{ background:"#10b981", color:"#fff", border:"none", padding:"4px 8px", borderRadius:4, cursor:"pointer" }}>Accept</button>
-                        <button onClick={()=>handleReject(n.id)} style={{ background:"#ef4444", color:"#fff", border:"none", padding:"4px 8px", borderRadius:4, cursor:"pointer" }}>Reject</button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
          <img
       src={form.companyLogo ? URL.createObjectURL(form.companyLogo) : "https://i.pravatar.cc/150"}
       alt="profile"
-      style={{ borderRadius: "50%", width: 150, height: 150, cursor: "pointer" }}
-      onClick={() => window.open(form.companyLogo ? URL.createObjectURL(form.companyLogo) : "https://i.pravatar.cc/300", "_blank")}
+      style={{ borderRadius: "50%", width: 80, height: 80, cursor: "pointer" }}
+      onClick={() => setShowProfilePreview(true)}
     />
 
 
-          <button onClick={()=>{localStorage.removeItem("token"); window.location.href="/"}} style={{ background:"#374151", color:"#fff", border:"none", padding:"8px 12px", borderRadius:5, cursor:"pointer", fontWeight:"bold" }}>Logout</button>
+          <button
+            onClick={() => {
+              localStorage.removeItem("organiserToken");
+              localStorage.removeItem("staffToken");
+              localStorage.removeItem("token");
+              window.location.href = "/";
+            }}
+            style={{ background:"#374151", color:"#fff", border:"none", padding:"8px 12px", borderRadius:5, cursor:"pointer", fontWeight:"bold" }}
+          >
+            Logout
+          </button>
         </div>
 
         {/* Dashboard Cards */}
@@ -1194,6 +1242,64 @@ const handleProfileUpdate = async () => {
           </div>
         )}
       </div>
+
+      {showProfilePreview && (
+        <div
+          onClick={() => setShowProfilePreview(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <img
+              src={form.companyLogo ? URL.createObjectURL(form.companyLogo) : "https://i.pravatar.cc/300"}
+              alt="preview"
+              style={{ maxWidth: "90vw", maxHeight: "80vh", borderRadius: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.4)" }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Notifications modal */}
+      {showDropdown && (
+        <div
+          onClick={() => setShowDropdown(false)}
+          style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", color:"#000" ,display:"flex", alignItems:"center", justifyContent:"center", zIndex: 1000 }}
+        >
+          <div
+            onClick={(e)=>e.stopPropagation()}
+            style={{ width:"90%", maxWidth:480, maxHeight:"80vh", overflowY:"auto", background:"#fff", borderRadius:12, boxShadow:"0 10px 30px rgba(0,0,0,0.4)", padding:16 }}
+          >
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+              <h3 style={{ margin:0 }}>Notifications</h3>
+              <button onClick={()=>setShowDropdown(false)} style={{ background:"#ef4444", color:"#fff", border:"none", padding:"6px 10px", borderRadius:6, cursor:"pointer" }}>Close</button>
+            </div>
+            {notifications.length === 0 ? (
+              <div style={{ padding:10, textAlign:"center" }}>No notifications</div>
+            ) : (
+              <div>
+                {notifications.map(n => (
+                  <div key={n.id} style={{ padding:"10px", borderBottom:"1px solid #eee" }}>
+                    <div style={{ fontSize:14, marginBottom:6 }}>{n.message}</div>
+                    {n.type === "apply" && (
+                      <div style={{ display:"flex", gap:10 }}>
+                        <button onClick={()=>handleAccept(n.id)} style={{ background:"#10b981", color:"#fff", border:"none", padding:"4px 8px", borderRadius:4, cursor:"pointer" }}>Accept</button>
+                        <button onClick={()=>handleReject(n.id)} style={{ background:"#ef4444", color:"#fff", border:"none", padding:"4px 8px", borderRadius:4, cursor:"pointer" }}>Reject</button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Bubble animation */}
       <style>{`

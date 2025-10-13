@@ -218,10 +218,9 @@ export default function StaffRegistration({ go, loading, setLoading }) {
       const data = await registerStaff(fd);
       if (!data.success) alert(data.message || "⚠️ Registration failed");
       else {
-        alert("🎉 Registration successful!");
-        login(data.token, data.staff); // ✅ auto login
+        alert("🎉 Registration successful! Please log in.");
         socket.emit("staff-registered", { id: data.staff._id, name: data.staff.fullName });
-        go("staff-dashboard");
+        go("staff-login");
       }
 
     } catch (err) { console.error(err); alert(err.message || "⚠️ Server connection failed"); }

@@ -2,7 +2,14 @@
 import { io } from "socket.io-client";
 
 // --- Create a single global Socket.IO instance ---
-const socket = io(process.env.REACT_APP_API_URL || "http://localhost:5050", {
+// Normalize base URL: ensure we don't include "/api" in the Socket.IO URL
+const rawBase = process.env.REACT_APP_API_URL || "http://localhost:5050/api";
+let baseForSocket = rawBase;
+if (baseForSocket.endsWith("/api")) baseForSocket = baseForSocket.slice(0, -4);
+if (baseForSocket.endsWith("/")) baseForSocket = baseForSocket.slice(0, -1);
+
+const socket = io(baseForSocket, {
+  path: "/socket.io",
   transports: ["websocket"],   // Force WebSocket transport
   reconnectionAttempts: 5,     // Retry 5 times on disconnect
   reconnectionDelay: 1000,     // 1 second between retries
@@ -14,9 +21,10 @@ socket.on("disconnect", (reason) => console.log("⚠️ Disconnected from WebSoc
 socket.on("connect_error", (err) => console.error("🔴 WebSocket connection error:", err));
 
 // --- Prevent duplicate default listeners during hot reload ---
-if (!socket.hasMessageListener) {
+let hasMessageListener = false;
+if (!hasMessageListener) {
   socket.on("message", (data) => console.log("📩 New message:", data));
-  socket.hasMessageListener = true;
+  hasMessageListener = true;
 }
 
 // --- Utility: Subscribe to events dynamically ---

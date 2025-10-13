@@ -51,7 +51,11 @@ const request = async (url, options = {}) => {
       data = { message: text };
     }
 
-    if (!res.ok) throw new Error(data?.message || res.statusText || "API request failed");
+    if (!res.ok) {
+      const validationMsg = Array.isArray(data?.errors) && data.errors[0]?.msg;
+      const msg = validationMsg || data?.message || res.statusText || "API request failed";
+      throw new Error(msg);
+    }
 
     return data;
   } catch (err) {
@@ -71,10 +75,10 @@ export const getStaffProfile = (token) =>
   request(`${BASE}/auth/staff/profile`, { headers: buildHeaders(token) });
 
 export const registerOrganiser = (formData) =>
-  request(`${BASE}/auth/organiser/register`, { method: "POST", body: formData });
+  request(`${BASE}/organiser/register`, { method: "POST", body: formData });
 
 export const sendOtp = (data) =>
-  request(`${BASE}/auth/organiser/send-otp`, { method: "POST", body: data });
+  request(`${BASE}/otp/send-otp`, { method: "POST", body: data });
 
 export const loginOrganiser = (credentials) =>
   request(`${BASE}/auth/organiser/login`, { method: "POST", body: credentials });
