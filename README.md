@@ -42,60 +42,6 @@ A comprehensive event management platform that connects event organizers with st
 - **Material-UI** components
 - **Leaflet** for maps integration
 
-## 📁 Project Structure
-
-```
-project123/
-├── Backend/
-│   ├── config/
-│   │   └── db.js                 # Database configuration
-│   ├── controllers/
-│   │   ├── authController.js     # Authentication logic
-│   │   ├── eventController.js    # Event management
-│   │   ├── organiserController.js # Organizer operations
-│   │   └── staffController.js    # Staff operations
-│   ├── middlewares/
-│   │   ├── auth.js               # JWT authentication
-│   │   ├── errorHandler.js     # Error handling
-│   │   ├── roles.js              # Role-based access
-│   │   ├── upload.js             # File upload handling
-│   │   └── validationMiddleware.js # Input validation
-│   ├── models/
-│   │   ├── Event.js              # Event data model
-│   │   ├── Organiser.js          # Organizer model
-│   │   ├── Staff.js              # Staff model
-│   │   └── User.js               # Base user model
-│   ├── routes/
-│   │   ├── authRoutes.js         # Authentication routes
-│   │   ├── eventRoutes.js        # Event routes
-│   │   ├── organiserRoutes.js    # Organizer routes
-│   │   ├── otpRoutes.js          # OTP routes
-│   │   └── staffRoutes.js        # Staff routes
-│   ├── uploads/                   # File storage
-│   ├── server.js                 # Main server file
-│   └── package.json
-├── frontend/
-│   ├── src/
-│   │   ├── api/
-│   │   │   └── api.js            # API client
-│   │   ├── context/
-│   │   │   └── AuthContext.js    # Authentication context
-│   │   ├── pages/
-│   │   │   ├── LandingPage.jsx   # Home page
-│   │   │   ├── OrganiserLogin.jsx # Organizer login
-│   │   │   ├── StaffLogin.jsx    # Staff login
-│   │   │   ├── OrganiserRegistration.jsx # Organizer signup
-│   │   │   ├── StaffRegistration.jsx # Staff signup
-│   │   │   ├── OrganiserDashboard.jsx # Organizer dashboard
-│   │   │   └── StaffDashboard.jsx # Staff dashboard
-│   │   ├── utils/
-│   │   │   ├── constants.js       # App constants
-│   │   │   └── socket.js         # Socket.io client
-│   │   ├── App.js                # Main app component
-│   │   └── index.js              # App entry point
-│   └── package.json
-└── README.md
-```
 
 ## 🚀 Quick Start
 
@@ -109,7 +55,7 @@ project123/
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd project123
+   cd project
    ```
 
 2. **Install Backend Dependencies**
@@ -124,30 +70,12 @@ project123/
    npm install
    ```
 
-4. **Environment Setup**
-   
-   Create a `.env` file in the `Backend` directory:
-   ```env
-   # Database Configuration
-   MONGO_URI=mongodb://localhost:27017/eventmanagement
-   
-   # JWT Secret Key (change this in production)
-   JWT_SECRET=your_super_secret_jwt_key_here_change_this_in_production
-   
-   # Server Configuration
-   PORT=5050
-   
-   # Twilio Configuration (for OTP)
-   TWILIO_ACCOUNT_SID=your_twilio_account_sid
-   TWILIO_AUTH_TOKEN=your_twilio_auth_token
-   TWILIO_PHONE_NUMBER=your_twilio_phone_number
-   ```
 
-5. **Start MongoDB**
+4. **Start MongoDB**
    - **Local MongoDB**: Ensure MongoDB service is running
    - **MongoDB Atlas**: Update the `MONGO_URI` in `.env` file
 
-6. **Start the Backend Server**
+5. **Start the Backend Server**
    ```bash
    cd Backend
    npm start
@@ -155,15 +83,12 @@ project123/
    npm run dev
    ```
 
-7. **Start the Frontend**
+6. **Start the Frontend**
    ```bash
    cd frontend
    npm start
    ```
 
-8. **Access the Application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5050/api
 
 ## 🔧 Configuration
 
