@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 const FE_ORIGIN =
   process.env.NODE_ENV === "production"
     ? "https://location-frontend-delta.vercel.app"
-    : "http://localhost:5002";
+    : ["http://localhost:5001", "http://localhost:5002"];
 
 // ✅ CORS Configuration
 app.use(
