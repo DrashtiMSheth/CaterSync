@@ -1,5 +1,5 @@
 // src/api/api.js
-const BASE = process.env.REACT_APP_API_URL || "http://localhost:5050/api";
+const BASE = process.env.REACT_APP_API_URL || "http://localhost:5052/api";
 
 /**
  * Build headers including token if provided.
