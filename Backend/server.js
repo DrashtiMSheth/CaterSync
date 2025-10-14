@@ -19,8 +19,12 @@ const errorHandler = require("./middlewares/errorHandler");
 const app = express();
 const server = http.createServer(app);
 
-// ✅ Connect to MongoDB
-connectDB();
+// ✅ Connect to MongoDB (optional for testing)
+if (process.env.MONGO_URI && process.env.MONGO_URI !== 'mongodb://localhost:27017/event-management') {
+  connectDB();
+} else {
+  console.log("⚠️  MongoDB connection skipped for testing");
+}
 
 // ✅ Security & Body Parsing Middleware
 app.use(helmet());
@@ -28,15 +32,28 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ✅ Allowed frontend origins (local + deployed)
-const FE_ORIGIN =
-  process.env.NODE_ENV === "production"
-    ? "https://location-frontend-delta.vercel.app"
-    : "http://localhost:5002";
+const FE_ORIGINS = process.env.NODE_ENV === "production"
+  ? ["https://location-frontend-delta.vercel.app"]
+  : [
+      "http://localhost:5001",
+      "http://localhost:5002", 
+      "http://localhost:3000",
+      "http://localhost:3001"
+    ];
 
 // ✅ CORS Configuration
 app.use(
   cors({
-    origin: FE_ORIGIN,
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (FE_ORIGINS.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true, // allow cookies/tokens
@@ -58,7 +75,7 @@ app.use(errorHandler);
 // ✅ Socket.io Setup
 const io = new Server(server, {
   cors: {
-    origin: FE_ORIGIN,
+    origin: FE_ORIGINS,
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -87,6 +104,7 @@ io.on("connection", (socket) => {
 
 // ✅ Start the server
 const PORT = process.env.PORT || 5050;
-server.listen(PORT, () => {
+console.log(`🔧 Attempting to start server on port ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server & WebSocket running on port ${PORT}`);
 });
