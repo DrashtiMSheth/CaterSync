@@ -12,12 +12,17 @@ router.post("/send-otp", (req, res) => {
   try {
     const code = generateOTP();
     const expires = Date.now() + 2 * 60 * 1000; 
+    const otpToken = `otp_${phone}_${Date.now()}`; // Generate a unique token for this OTP session
 
-    otpStore[phone] = { code, expires };
+    otpStore[phone] = { code, expires, otpToken };
 
     console.log(`OTP for ${phone}: ${code}`); 
 
-    res.json({ message: "OTP sent successfully", otp: code });
+    res.json({ 
+      message: "OTP sent successfully", 
+      otp: code,
+      otpToken: otpToken 
+    });
   } catch (err) {
     console.error("OTP send error:", err);
     res.status(500).json({ message: "Server error" });
@@ -25,7 +30,7 @@ router.post("/send-otp", (req, res) => {
 });
 
 router.post("/verify-otp", (req, res) => {
-  const { phone, otp } = req.body;
+  const { phone, otp, otpToken } = req.body;
   if (!phone || !otp) return res.status(400).json({ message: "Phone and OTP required" });
 
   const record = otpStore[phone];
@@ -34,6 +39,11 @@ router.post("/verify-otp", (req, res) => {
   if (Date.now() > record.expires) {
     delete otpStore[phone];
     return res.status(400).json({ message: "OTP expired. Please request again." });
+  }
+
+  // Optional: Verify otpToken if provided
+  if (otpToken && record.otpToken !== otpToken) {
+    return res.status(400).json({ message: "Invalid OTP token" });
   }
 
   if (parseInt(otp) !== record.code) {

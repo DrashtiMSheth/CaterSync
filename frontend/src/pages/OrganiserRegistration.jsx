@@ -123,6 +123,24 @@ export default function OrganiserRegistration({ go }) {
     setStep(prev => prev + 1);
   };
 
+  // Handle OTP resend
+  const handleResendOtp = async () => {
+    try {
+      // Send new OTP request
+      const res = await sendOtp({ phone: form.phone });
+      // Update with new OTP
+      if (res?.otp) setServerOtp(String(res.otp));
+      // Reset countdown
+      setOtpCountdown(120);
+      // Clear current OTP input
+      setForm(prev => ({ ...prev, otp: "" }));
+      alert("New OTP sent successfully!");
+    } catch (err) {
+      console.error("OTP resend error:", err);
+      alert("Failed to resend OTP");
+    }
+  };
+
   // Submit registration
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -306,7 +324,7 @@ export default function OrganiserRegistration({ go }) {
                   <div style={{ height: "100%", width: `${(otpCountdown / 120) * 100}%`, background: "#00ffcc", borderRadius: 4, transition: "width 1s linear" }} />
                 </div>
                 {otpCountdown === 0 && (
-                  <button type="button" onClick={handleNext} style={{
+                  <button type="button" onClick={handleResendOtp} style={{
                     marginTop: 10, padding: 10, borderRadius: 6, background: "#00ffcc", color: "#333",
                     border: "none", cursor: "pointer", animation: "pulse 1s infinite"
                   }}>Resend OTP</button>
