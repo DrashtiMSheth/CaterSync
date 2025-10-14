@@ -2,10 +2,10 @@ import React, { useMemo } from "react";
 
 export default function LandingPage({
   go,
-  logo = "🌐 SmartServe",
-  title = "Welcome to SmartServe Platform",
-  subtitle = "Connecting Organisers with the Right Staff — fast, reliable, and modern.",
-  organiserBtnLabel = "📋 Organiser Entrance",
+  logo = "⚡ SmartServe",
+  title = "SmartServe — Where Organisers and Staff Work in Perfect Sync",
+  subtitle = "Powering seamless event collaboration with smart, real-time workforce management.",
+  organiserBtnLabel = "📋 Organiser Entrance", 
   staffBtnLabel = "👨‍🍳 Staff Entrance",
   footerText,
 }) {

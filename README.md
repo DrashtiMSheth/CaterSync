@@ -1,254 +1,139 @@
-# Event Management System
+🎯 SmartServe — Where Organisers & Staff Work in Perfect Sync
 
-A comprehensive event management platform that connects event organizers with staff members for efficient event planning and execution. The system features real-time communication, location-based staff allocation, and a modern web interface.
+A real-time, location-based event management platform that connects event organisers with catering and event staff for seamless event execution.
+SmartServe brings together chefs, servers, drivers, DJs, cleaners, and more under one unified system for efficient workforce coordination.
 
-## 🚀 Features
+🚀 Overview
 
-### For Event Organizers
-- **Registration & Authentication**: Secure registration with OTP verification
-- **Event Management**: Create, update, and manage events
-- **Staff Application Handling**: Review and approve/reject staff applications
-- **Real-time Notifications**: WebSocket-based notifications for instant updates
-- **Dashboard**: Comprehensive dashboard with event analytics
+Managing staff during large events can be chaotic — from chefs and waiters to drivers and decorators, every role matters.
+SmartServe solves this by offering a modern, intelligent workforce management solution that ensures the right people are at the right place at the right time.
 
-### For Staff Members
-- **Profile Management**: Complete profile setup with skills and availability
-- **Event Discovery**: Browse and apply for available events
-- **Application Tracking**: Monitor application status in real-time
-- **Location-based Matching**: Find events based on location preferences
+🌟 Key Features
 
-### System Features
-- **Real-time Communication**: WebSocket integration for instant updates
-- **File Upload**: Support for profile pictures and event attachments
-- **Responsive Design**: Modern, mobile-friendly interface
-- **Security**: JWT-based authentication and role-based access control
+👨‍💼 For Event Organisers
+Secure Registration & OTP Authentication
+Event Creation & Management — create, edit, and monitor events
+Staff Application Handling — approve, reject, or review applicants
+Real-time Notifications (via WebSockets)
+Dashboard Analytics for better decision-making
+Live Location Tracking of assigned staff
 
-## 🛠️ Tech Stack
+👩‍🍳 For Staff Members
+Profile Management with skill & availability setup
+Event Discovery based on location and skillset
+Live Application Tracking and instant updates
+OTP-based Authentication for security
+Easy Communication with organisers via real-time updates
 
-### Backend
-- **Node.js** with Express.js
-- **MongoDB** with Mongoose ODM
-- **Socket.io** for real-time communication
-- **JWT** for authentication
-- **Multer** for file uploads
-- **Twilio** for OTP services
-- **bcrypt** for password hashing
+⚙️ System Features
+Real-time Communication — powered by Socket.io
+Modern, Responsive Frontend — React + Tailwind + MUI
+Role-based Access Control — organiser vs. staff permissions
+File Uploads — profile images & event documents
+Scalable Backend Architecture with Express.js & MongoDB
+Secure Authentication using JWT
 
-### Frontend
-- **React 19** with modern hooks
-- **React Router** for navigation
-- **Socket.io Client** for real-time features
-- **Framer Motion** for animations
-- **Material-UI** components
-- **Leaflet** for maps integration
+🧑‍🍳 Supported Workforce Roles
+SmartServe is designed for every professional role involved in event operations:
 
-
-## 🚀 Quick Start
-
-### Prerequisites
-- **Node.js** (v16 or higher)
-- **MongoDB** (local installation or MongoDB Atlas)
-- **Git**
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd project
-   ```
-
-2. **Install Backend Dependencies**
-   ```bash
-   cd Backend
-   npm install
-   ```
-
-3. **Install Frontend Dependencies**
-   ```bash
-   cd ../frontend
-   npm install
-   ```
+Category	Roles
+🍳 Kitchen	Chefs, Cooks, Assistants
+🍽️ Service	Waiters, Servers, Bartenders, Hosts
+🚚 Logistics	Drivers, Delivery Staff, Inventory Managers
+🧹 Support	Cleaners, Setup Crew, Decorators
+🎧 Event Ops	DJs, Technicians, AV Staff
+📸 Media	Photographers, Videographers
+🔒 Management	Supervisors, Security, Guest Relations
+☕ Specialty	Baristas, Beverage Staff
+🧠 Tech Stack
 
 
-4. **Start MongoDB**
-   - **Local MongoDB**: Ensure MongoDB service is running
-   - **MongoDB Atlas**: Update the `MONGO_URI` in `.env` file
-
-5. **Start the Backend Server**
-   ```bash
-   cd Backend
-   npm start
-   # or for development
-   npm run dev
-   ```
-
-6. **Start the Frontend**
-   ```bash
-   cd frontend
-   npm start
-   ```
+⚙️ Backend
+Node.js + Express.js — RESTful API and middleware handling
+MongoDB (Mongoose) — scalable data layer
+Socket.io — real-time event & staff updates
+JWT Authentication — secure login system
+Multer — file uploads
+bcrypt — password hashing
+Twilio API (OTP) — SMS verification
 
 
-## 🔧 Configuration
+💻 Frontend
+React 19 — modern frontend architecture with hooks
+React Router — routing and navigation
+Framer Motion — smooth animations
+Socket.io Client — real-time event updates
+Leaflet.js — map integration for location tracking
 
-### Database Setup
-1. **Local MongoDB**:
-   ```bash
-   # Install MongoDB locally
-   # Start MongoDB service
-   mongod
-   ```
+⚡ Quick Start
+🧩 Prerequisites
+Node.js (v16 or higher)
+MongoDB (Local or Atlas)
+Git
 
-2. **MongoDB Atlas** (Recommended for production):
-   - Create a free account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
-   - Create a new cluster
-   - Get your connection string and update `MONGO_URI` in `.env`
+🔧 Setup
 
-### Twilio Setup (for OTP)
-1. Create a [Twilio account](https://www.twilio.com/)
-2. Get your Account SID and Auth Token
-3. Purchase a phone number
-4. Update the Twilio credentials in `.env`
+Clone the repository
+git clone https://github.com/DrashtiMSheth/ServeSync
+cd SmartServe
 
-## 📱 Usage
+Install backend dependencies
+cd Backend
+npm install
 
-### For Event Organizers
-1. **Register**: Create an account with organization details
-2. **Verify**: Complete OTP verification
-3. **Create Events**: Add event details, location, and requirements
-4. **Manage Applications**: Review and approve staff applications
-5. **Monitor**: Track event progress and staff assignments
+Install frontend dependencies
+cd ../frontend
+npm install
 
-### For Staff Members
-1. **Register**: Create a profile with skills and availability
-2. **Browse Events**: View available events in your area
-3. **Apply**: Submit applications for interesting events
-4. **Track Status**: Monitor application status and updates
-5. **Participate**: Join approved events and provide feedback
+Run the backend
+cd ../Backend
+npm start
 
-## 🔒 Security Features
+Run the frontend
+cd ../frontend
+npm start
 
-- **JWT Authentication**: Secure token-based authentication
-- **Password Hashing**: bcrypt for secure password storage
-- **Input Validation**: Comprehensive validation middleware
-- **CORS Protection**: Configured CORS for secure cross-origin requests
-- **File Upload Security**: Validated file types and sizes
-- **Role-based Access**: Different access levels for organizers and staff
 
-## 🐛 Troubleshooting
+🛡️ Security Highlights
+JWT-based Authentication
+Encrypted Passwords using bcrypt
+Role-based Access (Organiser / Staff)
+Input Validation Middleware
+Safe File Uploads (Multer)
+CORS Configuration for Secure API Calls
 
-### Common Issues
+📱 Core Workflows
 
-#### 1. "Failed to fetch" Error
-**Problem**: Registration fails with "Failed to fetch" error
-**Solutions**:
-- Ensure backend server is running on port 5050
-- Check MongoDB connection
-- Verify `.env` file exists with correct configuration
-- Check CORS settings in `server.js`
+👨‍💼 For Organisers
+Register & verify account via OTP
+Create & publish events
+Review staff applications
+Approve / Reject applicants
+Monitor staff & event progress in real-time
 
-#### 2. Database Connection Issues
-**Problem**: MongoDB connection failed
-**Solutions**:
-- Verify MongoDB is running: `mongod`
-- Check `MONGO_URI` in `.env` file
-- Ensure MongoDB service is accessible
+👩‍🍳 For Staff
+Register & verify via OTP
+Complete skill-based profile
+Browse and apply for events
+Track application status live
+Receive event updates instantly
 
-#### 3. OTP Not Sending
-**Problem**: OTP verification fails
-**Solutions**:
-- Verify Twilio credentials in `.env`
-- Check Twilio account balance
-- Ensure phone number format is correct
+🧩 Future Enhancements
+✅ In-App Chat for Real-Time Coordination
+✅ Advanced Analytics Dashboard
+✅ Event Budgeting & Cost Tracking
+✅ Mobile App (React Native)
+✅ Payment Gateway Integration
+✅ Multi-language Support
 
-#### 4. File Upload Issues
-**Problem**: Profile pictures or documents not uploading
-**Solutions**:
-- Check file size limits (max 200MB)
-- Verify file types are supported
-- Ensure `uploads` directory exists and is writable
 
-### Development Tips
+📜 License
+This project is licensed under the MIT License — see the LICENSE file for details.
 
-1. **Enable Debug Mode**:
-   ```bash
-   # Backend
-   DEBUG=* npm run dev
-   
-   # Frontend
-   REACT_APP_DEBUG=true npm start
-   ```
+💬 Feedback & Collaboration
+Got ideas to make SmartServe better?
+💡 Open an issue, fork the repo, or DM me — I’d love to collaborate and hear your feedback!
+👉 GitHub Repo: SmartServe — Location-Based Catering Management System
 
-2. **Check Logs**:
-   - Backend logs in terminal
-   - Browser console for frontend errors
-   - Network tab for API requests
-
-3. **Database Debugging**:
-   ```bash
-   # Connect to MongoDB
-   mongo
-   use eventmanagement
-   show collections
-   ```
-
-## 🚀 Deployment
-
-### Backend Deployment (Vercel)
-1. Install Vercel CLI: `npm i -g vercel`
-2. Configure `vercel.json` (already included)
-3. Deploy: `vercel --prod`
-
-### Frontend Deployment (Netlify/Vercel)
-1. Build the project: `npm run build`
-2. Deploy the `build` folder
-3. Configure environment variables
-
-### Environment Variables for Production
-```env
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/eventmanagement
-JWT_SECRET=your_production_secret_key
-TWILIO_ACCOUNT_SID=your_twilio_sid
-TWILIO_AUTH_TOKEN=your_twilio_token
-TWILIO_PHONE_NUMBER=your_twilio_number
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Commit changes: `git commit -m 'Add feature'`
-4. Push to branch: `git push origin feature-name`
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🆘 Support
-
-For support and questions:
-- Create an issue in the repository
-- Check the troubleshooting section above
-- Review the code comments for implementation details
-
-## 🔄 Updates
-
-### Recent Updates
-- Real-time WebSocket integration
-- Enhanced file upload system
-- Improved error handling
-- Mobile-responsive design
-- Security enhancements
-
-### Planned Features
-- Email notifications
-- Advanced search filters
-- Analytics dashboard
-- Mobile app development
-- Payment integration
-
----
-
-**Happy Event Managing! 🎉**
+🎉 Let’s make event management smarter, faster, and more connected.
+SmartServe — Bringing Order to Every Event, One Staff at a Time.
