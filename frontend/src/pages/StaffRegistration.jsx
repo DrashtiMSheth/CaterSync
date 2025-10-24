@@ -8,7 +8,7 @@ import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
 import { registerStaff } from "../api/api";
-import { io } from "socket.io-client";
+import socket from "../utils/socket";
 import { useAuth } from "../context/AuthContext";
 
 // --- Leaflet Default Icon Fix ---
@@ -76,7 +76,8 @@ export default function StaffRegistration({ go, loading, setLoading }) {
     fullName: "", email: "", phone: "", password: "",
     role: "", skills: [], city: "", address: "", lat: null, lng: null,
     availability: "", gender: "", languages: [], profilePic: null,
-    otp: "", terms: false
+    otp: "", terms: false,
+    startDate: "", startTime: ""
   });
   const [errors, setErrors] = useState({});
   const [preview, setPreview] = useState(null);
@@ -89,7 +90,7 @@ export default function StaffRegistration({ go, loading, setLoading }) {
   const formRef = useRef(null);
 
   // --- Socket.IO setup ---
-  const socket = useMemo(() => io(process.env.REACT_APP_API_URL || "http://localhost:5050"), []);
+  // Use shared socket instance from utils/socket.js
 
   useEffect(() => {
     socket.on("connect", () => console.log("Socket connected:", socket.id));
@@ -218,9 +219,10 @@ export default function StaffRegistration({ go, loading, setLoading }) {
       const data = await registerStaff(fd);
       if (!data.success) alert(data.message || "⚠️ Registration failed");
       else {
-        alert("🎉 Registration successful! Please log in.");
+        alert("🎉 Registration successful!");
+        login(data.token, data.staff); // ✅ auto login
         socket.emit("staff-registered", { id: data.staff._id, name: data.staff.fullName });
-        go("staff-login");
+        go("staff-dashboard");
       }
 
     } catch (err) { console.error(err); alert(err.message || "⚠️ Server connection failed"); }

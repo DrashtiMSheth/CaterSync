@@ -2,17 +2,22 @@ const jwt = require("jsonwebtoken");
 
 module.exports = function (req, res, next) {
   try {
+    let token;
     const authHeader = req.header("Authorization");
-    if (!authHeader) {
+    const xAuthToken = req.header("x-auth-token");
+
+    if (authHeader) {
+      const parts = authHeader.split(" ");
+      if (parts.length === 2 && parts[0] === "Bearer") {
+        token = parts[1];
+      } else {
+        return res.status(401).json({ message: "Access denied. Invalid token format." });
+      }
+    } else if (xAuthToken) {
+      token = xAuthToken;
+    } else {
       return res.status(401).json({ message: "Access denied. No token provided." });
     }
-
-    const parts = authHeader.split(" ");
-    if (parts.length !== 2 || parts[0] !== "Bearer") {
-      return res.status(401).json({ message: "Access denied. Invalid token format." });
-    }
-
-    const token = parts[1];
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (!decoded || !decoded.id) {

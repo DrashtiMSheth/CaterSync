@@ -102,9 +102,11 @@ export default function OrganiserRegistration({ go }) {
 
   // Move to next step
   const handleNext = async () => {
-    const newErrors = step === 1 ? validateStep1() : validateStep2();
-    if (Object.keys(newErrors).length > 0) return setErrors(newErrors);
-
+  const newErrors = step === 1 ? validateStep1() : validateStep2();
+  if (Object.keys(newErrors).length > 0) {
+    alert(Object.values(newErrors).join("\n")); // Show all errors in alert
+    return setErrors(newErrors);
+  }
     if (step === 2) {
       try {
         // Backend expects phone at /api/otp/send-otp
@@ -115,7 +117,8 @@ export default function OrganiserRegistration({ go }) {
         setOtpCountdown(120);
       } catch (err) {
         console.error("OTP error:", err);
-        return alert("Failed to send OTP");
+        const msg = err.response?.data?.message || "Failed to send OTP";
+  alert(msg);
       }
     }
 
@@ -147,7 +150,10 @@ export default function OrganiserRegistration({ go }) {
     const newErrors = {};
     if (!form.otp) newErrors.otp = "Enter OTP";
     if (!form.terms) newErrors.terms = "Accept Terms & Conditions";
-    if (Object.keys(newErrors).length > 0) return setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+  alert(Object.values(newErrors).join("\n"));
+  return setErrors(newErrors);
+}
 
     setInternalLoading(true);
     try {

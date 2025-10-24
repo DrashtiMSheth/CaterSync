@@ -54,6 +54,151 @@ function LocationSelector({ form, setForm }) {
   return null;
 }
 
+// ---------- Star Rating Component ----------
+function StarRatingUnique({ eventIdx, ratingMap, setRatingMap }) {
+  const ratingValue = ratingMap[eventIdx] || 0;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      {[1, 2, 3, 4, 5].map(starNum => (
+        <span
+          key={`star-${eventIdx}-${starNum}`}
+          onClick={() => setRatingMap(prev => ({ ...prev, [eventIdx]: starNum }))}
+          style={{ cursor: "pointer", color: starNum <= ratingValue ? "#f59e0b" : "#d1d5db", fontSize: 20 }}
+        >
+          ★
+        </span>
+      ))}
+    </div>
+  );
+}
+
+// ---------- Payment Modal Component ----------
+function PaymentModalUnique({ open, event, onClose, onSubmit }) {
+  if (!open || !event) return null;
+
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+      background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 999
+    }}>
+      <div style={{ background: "#fff", padding: 20, borderRadius: 8, maxWidth: 400, width: "90%", boxShadow: "0 4px 20px rgba(0,0,0,0.2)" }}>
+        <h3>Confirm Payment</h3>
+        <div style={{ marginBottom: 10 }}>Amount: ${event.eventAmount}</div>
+        <div style={{ marginBottom: 10 }}>
+          <label>Payment Mode: </label><br />
+          <select id="payment-mode-unique" style={{ width: "100%", padding: 8, marginTop: 5 }}>
+            <option value="Cash">Cash</option>
+            <option value="UPI">UPI</option>
+            <option value="Card">Card</option>
+          </select>
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <button onClick={onClose} style={{ padding: "6px 12px", background: "#ef4444", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer" }}>Cancel</button>
+          <button onClick={() => onSubmit(document.getElementById("payment-mode-unique").value)} style={{ padding: "4px 8px", background: "#f59e0b", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>Confirm Pay</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Staff Detail Modal Component ----------
+function StaffDetailModal({ staff, events, ratingMap, setRatingMap, onClose, onRate, onPay }) {
+  if (!staff) return null;
+
+  // Real-time overall rating calculation
+  const ratedEvents = events.filter(e => e.ratedByOrg || ratingMap[events.indexOf(e)]);
+  const overallRating = ratedEvents.length
+    ? Math.round(
+        ratedEvents.reduce((sum, e, idx) => sum + (e.ratedByOrg ? e.eventRate : ratingMap[idx] || 0), 0) 
+        / ratedEvents.length
+      )
+    : "Not Rated Yet";
+
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+      background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 999
+    }}>
+      <div style={{ background: "#fff", padding: 20, borderRadius: 8, maxWidth: 800, width: "90%", maxHeight: "80%", overflowY: "auto", boxShadow: "0 4px 20px rgba(0,0,0,0.2)" }}>
+        <h3>{staff.staffName} Details</h3>
+        <div style={{ marginBottom: 15 }}>
+          <strong>Overall Rating: </strong>{overallRating}{ratedEvents.length ? " ⭐" : ""}
+        </div>
+
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
+              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Event Name</th>
+              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Role</th>
+              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Amount</th>
+              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Rate</th>
+              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Payment Mode</th>
+              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Transaction ID</th>
+              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Status</th>
+              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {events.map((eventItem, idx) => (
+              <tr key={`event-row-${staff.staffId}-${idx}`} style={{
+                borderBottom: "1px solid #eee",
+                backgroundColor: !eventItem.paidStatus ? "#fff7e6" : !eventItem.ratedByOrg ? "#e6f7ff" : "transparent"
+              }}>
+                <td style={{ padding: 10 }}>{eventItem.eventName}</td>
+                <td style={{ padding: 10 }}>{eventItem.eventRole}</td>
+                <td style={{ padding: 10 }}>${eventItem.eventAmount}</td>
+                <td style={{ padding: 10 }}>{eventItem.ratedByOrg ? `${eventItem.eventRate} ⭐` : ratingMap[idx] ? `${ratingMap[idx]} ⭐` : "—"}</td>
+                <td style={{ padding: 10 }}>{eventItem.paymentMethod || "—"}</td>
+                <td style={{ padding: 10 }}>{eventItem.txnId || "—"}</td>
+                <td style={{ padding: 10 }}>{eventItem.paidStatus ? <span style={{ color: "green", fontWeight: "bold" }}>Paid</span> : <span style={{ color: "orange" }}>Pending</span>}</td>
+                <td style={{ padding: 10, display: "flex", gap: 5, alignItems: "center" }}>
+                  {!eventItem.ratedByOrg && <>
+                    <StarRatingUnique eventIdx={idx} ratingMap={ratingMap} setRatingMap={setRatingMap} />
+                    <button onClick={() => onRate(idx)} style={{ padding: "4px 8px", background: "#10b981", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", marginLeft: 5 }}>Rate</button>
+                  </>}
+                  {!eventItem.paidStatus && <button onClick={() => onPay(idx)} style={{ padding: "4px 8px", background: "#f59e0b", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", marginLeft: 5 }}>Pay</button>}
+                  {eventItem.paidStatus && <span style={{ color: "green", fontWeight: "bold" }}>✔</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <button onClick={onClose} style={{ padding: "6px 12px", background: "#ef4444", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer", marginTop: 15 }}>Close</button>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Staff Directory Component ----------
+function StaffDirectoryUnique({ staffList, onSelect }) {
+  return (
+    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <thead>
+        <tr>
+          <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Staff Name</th>
+          <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Email</th>
+          <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Contact</th>
+          <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>View</th>
+        </tr>
+      </thead>
+      <tbody>
+        {staffList.map(staff => (
+          <tr key={`staff-row-${staff.staffId}`} style={{ borderBottom: "1px solid #eee" }}>
+            <td style={{ padding: 10 }}>{staff.staffName}</td>
+            <td style={{ padding: 10 }}>{staff.staffEmail}</td>
+            <td style={{ padding: 10 }}>{staff.staffContact}</td>
+            <td style={{ padding: 10 }}>
+              <button onClick={() => onSelect(staff.staffId)} style={{ padding: "6px 12px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer" }}>View</button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+
 export default function OrganiserDashboard({ bubbleCount = 25 }) {
   // const initialStaff = [
   //   { id: 1, name: "Alice", rating: 4, payment: 100, lat: 19.07, lon: 72.87, ratingsByOrganiser: {}, ratingsForOrganiser: [] },
@@ -61,26 +206,64 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
   //   { id: 3, name: "Charlie", rating: 5, payment: 120, lat: 19.1, lon: 72.85, ratingsByOrganiser: {}, ratingsForOrganiser: [] },
   // ];
 
-  const initialEvents = [
-    { id: 1, name: "Event A", startDate: "2025-09-20", endDate: "2025-09-20", priority: "High", required: 10, applied: 10, lat: 19.06, lon: 72.86, staff: {}, specialReqs: [], attachments: [] },
-    { id: 2, name: "Event B", startDate: "2025-09-22", endDate: "2025-09-22", priority: "Medium", required: 5, applied: 5, lat: 19.08, lon: 72.84, staff: {}, specialReqs: [], attachments: [] },
+  // const initialEvents = [
+  //   { id: 1, name: "Event A", startDate: "2025-09-20", endDate: "2025-09-20", priority: "High", required: 10, applied: 10, lat: 19.06, lon: 72.86, staff: {}, specialReqs: [], attachments: [] },
+  //   { id: 2, name: "Event B", startDate: "2025-09-22", endDate: "2025-09-22", priority: "Medium", required: 5, applied: 5, lat: 19.08, lon: 72.84, staff: {}, specialReqs: [], attachments: [] },
+  // ];
+
+//   const todayStr = new Date().toISOString().split("T")[0];
+//   // Styling
+// const thStyle = {
+//   padding: "12px",
+//   border: "1px solid #ccc",
+//   backgroundColor: "#f3f4f6",
+//   fontWeight: "bold",
+//   textAlign: "left",
+// };
+
+// const tdStyle = {
+//   padding: "12px",
+//   border: "1px solid #ccc",
+//   verticalAlign: "top",
+// };
+
+ // Styles
+const thStyle = { padding: "12px", border: "1px solid #ccc", background: "#f3f4f6", fontWeight: "bold", cursor: "pointer" };
+const tdStyle = { padding: "12px", border: "1px solid #ccc", verticalAlign: "top" };
+
+  // Dummy past events data
+  const pastEvents = [
+    {
+      id: 101,
+      name: "Team Building Retreat",
+      startDateTime: "2025-10-10T10:00",
+      endDateTime: "2025-10-10T18:00",
+      location: "Resort X",
+      staff: {
+        Waiter: { male: 2, female: 1, hoursWorked: 8, paymentPerHour: 10, paymentPerEvent: 0, paid: true },
+        Chef: { male: 1, female: 1, hoursWorked: 8, paymentPerHour: 15, paymentPerEvent: 0, paid: true },
+        DJ: { male: 1, female: 0, hoursWorked: 0, paymentPerHour: 0, paymentPerEvent: 100, paid: true },
+      },
+      extraExpenses: 40,
+      extraPaid: true,
+      status: "Completed",
+    },
+    {
+      id: 102,
+      name: "Product Launch",
+      startDateTime: "2025-10-12T14:00",
+      endDateTime: "2025-10-12T20:00",
+      location: "Convention Center",
+      staff: {
+        Waiter: { male: 3, female: 2, hoursWorked: 6, paymentPerHour: 12, paymentPerEvent: 0, paid: true },
+        Cleaner: { male: 1, female: 1, hoursWorked: 6, paymentPerHour: 8, paymentPerEvent: 0, paid: false },
+        Anchor: { male: 1, female: 0, hoursWorked: 0, paymentPerHour: 0, paymentPerEvent: 120, paid: true },
+      },
+      extraExpenses: 70,
+      extraPaid: false,
+      status: "Completed",
+    },
   ];
-
-  const todayStr = new Date().toISOString().split("T")[0];
-  // Styling
-const thStyle = {
-  padding: "12px",
-  border: "1px solid #ccc",
-  backgroundColor: "#f3f4f6",
-  fontWeight: "bold",
-  textAlign: "left",
-};
-
-const tdStyle = {
-  padding: "12px",
-  border: "1px solid #ccc",
-  verticalAlign: "top",
-};
 
   const initialForm = {
     eventName: "",
@@ -92,6 +275,35 @@ const tdStyle = {
     budget: 0,
     staff: {},
   };
+
+  // Styles for CurrentUpcomingEvents component
+const currentEventsThStyle = { padding: "12px", border: "1px solid #ccc", background: "#f3f4f6", fontWeight: "bold" };
+const currentEventsTdStyle = { padding: "12px", border: "1px solid #ccc", verticalAlign: "top" };
+const currentEventsButtonStyle = (disabled = false) => ({
+  padding: "6px 12px",
+  border: "none",
+  borderRadius: "6px",
+  background: disabled ? "#ccc" : "#3b82f6",
+  color: disabled ? "#666" : "white",
+  cursor: disabled ? "not-allowed" : "pointer",
+});
+
+// Progress bar component
+const ProgressBar = ({ assigned, required }) => {
+  const percentage = required ? Math.min((assigned / required) * 100, 100) : 0;
+  let color = "#ef4444"; // red
+  if (percentage === 100) color = "#16a34a"; // green
+  else if (percentage > 0) color = "#facc15"; // yellow
+
+  return (
+    <div style={{ marginTop: 4 }}>
+      <div style={{ fontSize: 12 }}>{assigned}/{required}</div>
+      <div style={{ background: "#e5e7eb", borderRadius: 6, height: 12, width: "100%" }}>
+        <div style={{ width: `${percentage}%`, background: color, height: "100%", borderRadius: 6 }} />
+      </div>
+    </div>
+  );
+};
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -113,7 +325,7 @@ const tdStyle = {
   ]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showProfilePreview, setShowProfilePreview] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  // const [searchQuery, setSearchQuery] = useState("");
   const [staffRatings, setStaffRatings] = useState([]);
   const [staffSearch, setStaffSearch] = useState("");
   const [staffRating, setStaffRating] = useState(0);
@@ -122,7 +334,7 @@ const tdStyle = {
   const handleDeleteRating = (index) => {
     setStaffRatings(prev => prev.filter((_, i) => i !== index));
   };
-  const [editingEvent, setEditingEvent] = useState(null);
+//  const [editingEvent, setEditingEvent] = useState(null);
   const [applications, setApplications] = useState([]); // holds staff applications
   const [staff, setStaff] = useState([]); // fetched via API instead of static list
   // const [colorMode, setColorMode] = useState(false);
@@ -274,43 +486,20 @@ const tdStyle = {
     }
   };
 
-
-  // State for filters & sorting
-  const [filterEvent, setFilterEvent] = useState("");
-  const [sortOption, setSortOption] = useState("newest");
-
-  // Example reviews data (replace with DB/API data later)
-  const [reviews] = useState([
-    { staff: "Alice", event: "Event A", rating: 5, review: "Amazing organiser, smooth experience.", date: "2025-09-25" },
-    { staff: "Bob", event: "Event B", rating: 4, review: "Well managed but could improve payments.", date: "2025-09-22" },
-    { staff: "Charlie", event: "Event A", rating: 3, review: "Average experience, some miscommunication.", date: "2025-09-20" },
-  ]);
-
-  // Sorting logic
-  const sortedReviews = [...reviews].sort((a, b) => {
-    if (sortOption === "newest") return new Date(b.date) - new Date(a.date);
-    if (sortOption === "oldest") return new Date(a.date) - new Date(b.date);
-    if (sortOption === "highest") return b.rating - a.rating;
-    if (sortOption === "lowest") return a.rating - b.rating;
-    return 0;
-  });
-
-
-
   const today = new Date().toISOString().split("T")[0];
-  const filteredEvents = events.filter((event) => {
-    const start = new Date(event.startDate);
-    const end = new Date(event.endDate || event.startDate);
-    const now = new Date(today);
+  // const filteredEvents = events.filter((event) => {
+  //   const start = new Date(event.startDate);
+  //   const end = new Date(event.endDate || event.startDate);
+  //   const now = new Date(today);
 
-    if (activeTab === "Current Events") {
-      return start <= now && end >= now;
-    }
-    if (activeTab === "Upcoming Events") {
-      return start > now;
-    }
-    return true;
-  });
+  //   if (activeTab === "Current Events") {
+  //     return start <= now && end >= now;
+  //   }
+  //   if (activeTab === "Upcoming Events") {
+  //     return start > now;
+  //   }
+  //   return true;
+  // });
 
 
   // const organiserAvgRating = () => {
@@ -322,10 +511,8 @@ const tdStyle = {
   const menuItems = [
     { name: "Dashboard", icon: "🏠" },
     { name: "Current Events", icon: "📅" },
-    { name: "Events History", icon: "⏳" },
-    { name: "Staff Applications", icon: "📄" },
+    { name: "Event History", icon: "⏳" },
     { name: "Staff List", icon: "👥" },
-    { name: "Ratings", icon: "⭐" },
     { name: "Profile", icon: "👤" },
   ];
 
@@ -474,6 +661,189 @@ const tdStyle = {
     }
   };
 
+ 
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredEventss, setFilteredEventss] = useState(pastEvents); // ← assign dummy data
+  const [sortConfig, setSortConfig] = useState({ key: "startDateTime", direction: "asc" });
+
+  const formatDateTime = (dt) => dt?.replace("T", " ") || "-";
+
+  const calculateStaffBudgett = (data) =>
+    data.paymentPerEvent ? data.paymentPerEvent : (data.male + data.female) * (data.hoursWorked || 0) * (data.paymentPerHour || 0);
+
+  const isAllPaid = (event) => {
+    const staffPaid = Object.values(event.staff).every((s) => s.paid);
+    return staffPaid && event.extraPaid;
+  };
+
+  // Sorting logic
+  const sortedEvents = [...pastEvents].sort((a, b) => {
+    const { key, direction } = sortConfig;
+    let valA = a[key] || "";
+    let valB = b[key] || "";
+    if (key.includes("DateTime")) {
+      valA = new Date(valA);
+      valB = new Date(valB);
+    } else {
+      valA = valA.toString().toLowerCase();
+      valB = valB.toString().toLowerCase();
+    }
+    if (valA < valB) return direction === "asc" ? -1 : 1;
+    if (valA > valB) return direction === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  // Apply search filter
+  const filteredEvents = sortedEvents.filter((event) => {
+    const query = searchQuery.toLowerCase();
+    const staffRoles = Object.keys(event.staff).join(" ").toLowerCase();
+    return (
+      event.name.toLowerCase().includes(query) ||
+      staffRoles.includes(query) ||
+      formatDateTime(event.startDateTime).toLowerCase().includes(query) ||
+      formatDateTime(event.endDateTime).toLowerCase().includes(query)
+    );
+  });
+
+  const handleSort = (key) => {
+    setSortConfig((prev) => ({
+      key,
+      direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const [now, setNow] = useState(new Date());
+  const [editingEvents, setEditingEvents] = useState(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Local datetime for <input type="datetime-local">
+  const toLocalDateTime = (date) => {
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date - tzOffset).toISOString().slice(0,16);
+  };
+
+  const calculateStaffBudget = (data) =>
+    data.paymentPerEvent
+      ? data.paymentPerEvent
+      : (data.male + data.female) * (data.hoursWorked || 0) * (data.paymentPerHour || 0);
+
+  const isEditable = (event) => {
+    const start = new Date(event.startDateTime);
+    const cutoffDate = new Date(start);
+    cutoffDate.setDate(cutoffDate.getDate() - 2);
+    return now < cutoffDate;
+  };
+
+  const eventss = [
+    {
+      id: 1,
+      name: "Ongoing Event (Current)",
+      startDateTime: toLocalDateTime(new Date(now.getTime() - 60 * 60 * 1000)),
+      endDateTime: toLocalDateTime(new Date(now.getTime() + 2 * 60 * 60 * 1000)),
+      location: "Main Hall",
+      staff: { Waiter: { male: 1, female: 1, required: 2, hoursWorked: 4, paymentPerHour: 10, paymentPerEvent: 0 } },
+      extraExpenses: 20,
+    },
+    {
+      id: 2,
+      name: "Event in 2 Hours (Upcoming)",
+      startDateTime: toLocalDateTime(new Date(now.getTime() + 2 * 60 * 60 * 1000)),
+      endDateTime: toLocalDateTime(new Date(now.getTime() + 5 * 60 * 60 * 1000)),
+      location: "Hall B",
+      staff: { DJ: { male: 1, female: 0, required: 1, hoursWorked: 0, paymentPerHour: 0, paymentPerEvent: 100 } },
+      extraExpenses: 15,
+    },
+    {
+      id: 3,
+      name: "Event After 2 Days (Upcoming, non-editable)",
+      startDateTime: toLocalDateTime(new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)),
+      endDateTime: toLocalDateTime(new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000)),
+      location: "Garden Venue",
+      staff: { Chef: { male: 2, female: 0, required: 2, hoursWorked: 5, paymentPerHour: 15, paymentPerEvent: 0 } },
+      extraExpenses: 30,
+    },
+    {
+      id: 4,
+      name: "Event After 5 Days (Upcoming, editable)",
+      startDateTime: toLocalDateTime(new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000)),
+      endDateTime: toLocalDateTime(new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000)),
+      location: "Banquet Hall",
+      staff: { Photographer: { male: 1, female: 0, required: 1, hoursWorked: 0, paymentPerHour: 0, paymentPerEvent: 80 } },
+      extraExpenses: 40,
+    },
+  ];
+
+  const sortedEventss = [
+    ...eventss.filter((e) => new Date(e.startDateTime) <= now && new Date(e.endDateTime) >= now),
+    ...eventss.filter((e) => new Date(e.startDateTime) > now),
+  ];
+
+  const formatDateTimee = (dt) => dt?.replace("T", " ") || "-";
+const handleSave = () => {
+  setEvents(prev =>
+    prev.map(ev => ev.id === editingEvents.id ? editingEvents : ev)
+  );
+  setEditingEvents(null);
+  alert("✅ Event updated successfully!");
+};
+
+  const [staffRecords] = useState([
+    { staffId: 1, staffName: "John Doe", staffEmail: "john@example.com", staffContact: "1234567890" },
+    { staffId: 2, staffName: "Jane Smith", staffEmail: "jane@example.com", staffContact: "9876543210" },
+    { staffId: 3, staffName: "Alice Johnson", staffEmail: "alice@example.com", staffContact: "9876543219" }
+  ]);
+
+  const [staffEventRecords, setStaffEventRecords] = useState({
+    1: [
+      { eventName: "Wedding Event", eventRole: "DJ", ratedByOrg: true, eventRate: 5, eventAmount: 150, paymentMethod: "Cash", txnId: "TXN123", paidStatus: true },
+      { eventName: "Birthday Party", eventRole: "Photographer", ratedByOrg: false, paidStatus: false, eventAmount: 100 }
+    ],
+    2: [
+      { eventName: "Corporate Event", eventRole: "Waiter", ratedByOrg: true, eventRate: 5, eventAmount: 200, paymentMethod: "UPI", txnId: "TXN456", paidStatus: true }
+    ],
+    3: [
+      { eventName: "Conference", eventRole: "Cleaner", ratedByOrg: false, paidStatus: false, eventAmount: 50 }
+    ]
+  });
+
+  const [selectedStaffId, setSelectedStaffId] = useState(null);
+  const [starRatingMap, setStarRatingMap] = useState({});
+  const [paymentModalState, setPaymentModalState] = useState({ open: false, eventIdx: null });
+
+  const handleRate = (eventIdx) => {
+    const rating = starRatingMap[eventIdx];
+    if (!rating || rating < 1 || rating > 5) return alert("Select rating between 1–5 stars");
+
+    setStaffEventRecords(prev => {
+      const eventsCopy = [...prev[selectedStaffId]];
+      eventsCopy[eventIdx] = { ...eventsCopy[eventIdx], ratedByOrg: true, eventRate: rating };
+      return { ...prev, [selectedStaffId]: eventsCopy };
+    });
+
+    setStarRatingMap(prev => ({ ...prev, [eventIdx]: 0 }));
+  };
+
+  const handleOpenPayment = (eventIdx) => setPaymentModalState({ open: true, eventIdx });
+
+  const handlePaymentSubmit = (mode) => {
+    const txnId = `TXN-${selectedStaffId}-${paymentModalState.eventIdx}-${Date.now()}`;
+    setStaffEventRecords(prev => {
+      const eventsCopy = [...prev[selectedStaffId]];
+      const event = eventsCopy[paymentModalState.eventIdx];
+      eventsCopy[paymentModalState.eventIdx] = { ...event, paidStatus: true, paymentMethod: mode, txnId };
+      return { ...prev, [selectedStaffId]: eventsCopy };
+    });
+    setPaymentModalState({ open: false, eventIdx: null });
+  };
+
+  const selectedStaff = staffRecords.find(s => s.staffId === selectedStaffId);
+  const selectedEvents = selectedStaffId ? staffEventRecords[selectedStaffId] : [];
+
 
   return (
     <div style={{
@@ -516,10 +886,6 @@ const tdStyle = {
       <div style={{ flex: 1, padding: 20, background: "rgba(255,255,255,0.9)", overflowY: "scroll", zIndex: 1, color: "#000" }}>
         {/* Top Bar */}
         <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, padding: "4px 8px", borderBottom: "1px solid #e5e7eb", background: "#fff", marginBottom: 10 }}>
-          <div style={{ background: "#fef3c7", color: "#b45309", padding: "6px 12px", borderRadius: "20px", fontWeight: "bold", fontSize: "14px" }}>
-            ⭐ {reviews.length > 0
-              ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
-              : "0"} / 5          </div>
           <div style={{ position: "relative" }}>
             <span style={{ fontSize: 18, cursor: "pointer" }} onClick={() => setShowDropdown(true)}>🔔</span>
             {notifications.length > 0 && <span style={{ position: "absolute", top: -5, right: -5, background: "red", color: "#fff", borderRadius: "50%", fontSize: "12px", padding: "2px 6px" }}>{notifications.length}</span>}
@@ -551,7 +917,7 @@ const tdStyle = {
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20, gap: "15px" }}>
               {[
                 { title: "Current Events", count: events.filter((e) => new Date(e.startDate) <= new Date(today) && new Date(e.endDate || e.startDate) >= new Date(today)).length },
-                { title: "Upcoming Events", count: events.filter((e) => new Date(e.startDate) > new Date(today)).length },
+                { title: "Event History", count: events.filter((e) => new Date(e.startDate) > new Date(today)).length },
                 { title: "Staff List", count: staff.length }
               ].map((card) => (
                 <div
@@ -584,374 +950,462 @@ const tdStyle = {
           </>
         )}
 
-        {/* Events Table */}
-        {(activeTab === "Current Events" || activeTab === "Upcoming Events") && (
-          <div style={{ overflowX: "auto" }}>
-            {filteredEvents.length === 0 ? (
-              <div>No events</div>
-            ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Event Name</th>
-                    <th style={thStyle}>Start Date</th>
-                    <th style={thStyle}>Start Time</th>
-                    <th style={thStyle}>End Date</th>
-                    <th style={thStyle}>End Time</th>
-                    <th style={thStyle}>Location</th>
-                    <th style={thStyle}>Priority</th>
-                    <th style={thStyle}>Staff</th>
-                    <th style={thStyle}>Budget</th>
-                    <th style={thStyle}>Payment Mode</th>
-                    <th style={thStyle}>Attachments</th>
-                    <th style={thStyle}>Progress</th>
-                    {activeTab === "Upcoming Events" && <th style={thStyle}>Actions</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredEvents
-                    .filter((event) =>
-                      activeTab === "Upcoming Events"
-                        ? event.startDate > todayStr
-                        : event.startDate <= todayStr
-                    )
-                    .map((event) => (
-                      <tr key={event.id}>
-                        <td style={tdStyle}>{event.name}</td>
-                        <td style={tdStyle}>
-                          {event.startDateTime ? event.startDateTime.replace("T", " ") : "-"}
-                        </td>
-                        <td style={tdStyle}>
-                          {event.endDateTime ? event.endDateTime.replace("T", " ") : "-"}
-                        </td>
-                        <td style={tdStyle}>{event.location || "-"}</td>
-                        <td style={tdStyle}>{event.priority || "-"}</td>
-                        <td style={tdStyle}>
-                          {Object.entries(event.staff || {}).map(([role, count]) => (
-                            <div key={role}>
-                              {role}: {count}
-                            </div>
-                          ))}
-                        </td>
-                        <td style={tdStyle}>${event.budget || 0}</td>
-                        <td style={tdStyle}>{event.paymentMode || "-"}</td>
-                        <td style={tdStyle}>
-                          {event.attachments ? event.attachments.length + " file(s)" : 0}
-                        </td>
-                        <td style={{ width: "200px" }}>
-                          <div style={{ background: "#eee", borderRadius: "8px", height: "20px" }}>
-                            <div
-                              style={{
-                                width: `${Math.min((event.applied / event.required) * 100, 100)}%`,
-                                background:
-                                  event.applied === 0 ? "#9ca3af" :
-                                    event.applied < event.required ? "#3b82f6" :
-                                      "#10b981",
-                                height: "100%",
-                                borderRadius: "8px",
-                                transition: "width 0.3s ease",
-                              }}
-                            ></div>
-                          </div>
-                        </td>
+        {activeTab === "Current Events" && ( 
+          <div style={{ padding: 20 }}>
+      <h2>Current / Upcoming Events</h2>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 700 }}>
+          <thead>
+            <tr>
+              <th style={currentEventsThStyle}>Name</th>
+              <th style={currentEventsThStyle}>Start</th>
+              <th style={currentEventsThStyle}>End</th>
+              <th style={currentEventsThStyle}>Location</th>
+              <th style={currentEventsThStyle}>Staff & Budget</th>
+              <th style={currentEventsThStyle}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sortedEventss.map((event) => {
+              const start = new Date(event.startDateTime);
+              const end = new Date(event.endDateTime);
+              const isCurrent = start <= now && end >= now;
+              const editable = !isCurrent && isEditable(event);
 
-                        {activeTab === "Upcoming Events" && (
-                          <td>
-                            <button onClick={() => setEditingEvent(event)}>Edit</button>
-                          </td>
-                        )}
-                      </tr>
+              return (
+                <tr key={event.id} style={{ backgroundColor: isCurrent ? "#d1fae5" : "transparent" }}>
+                  <td style={currentEventsTdStyle}>{event.name}</td>
+                  <td style={currentEventsTdStyle}>{formatDateTimee(event.startDateTime)}</td>
+                  <td style={currentEventsTdStyle}>{formatDateTimee(event.endDateTime)}</td>
+                  <td style={currentEventsTdStyle}>{event.location}</td>
+                  <td style={currentEventsTdStyle}>
+                    {Object.entries(event.staff).map(([role, data]) => {
+                      const assigned = data.male + data.female;
+                      const required = data.required || assigned;
+                      return (
+                        <div key={role} style={{ marginBottom: 6 }}>
+                          <div>{role}: {assigned} assigned ({calculateStaffBudgett(data)}$)</div>
+                          <ProgressBar assigned={assigned} required={required} />
+                        </div>
+                      );
+                    })}
+                    {event.extraExpenses > 0 && <div>Extra: {event.extraExpenses}$</div>}
+                  </td>
+                  <td style={currentEventsTdStyle}>
+                    {editable && (
+                      <button style={currentEventsButtonStyle(false)} onClick={() => setEditingEvents(eventss)}>Edit</button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {editingEvents && (
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      background: "rgba(0,0,0,0.5)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 999,
+    }}
+  >
+    <div
+      style={{
+        background: "#fff",
+        padding: "25px 30px",
+        borderRadius: "10px",
+        width: "480px",
+        maxHeight: "90%",
+        overflowY: "auto",
+        boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
+      }}
+    >
+      <h3 style={{ marginBottom: 20, textAlign: "center", fontSize: "20px" }}>
+        Edit Event
+      </h3>
+
+      {/* Event Fields */}
+      <div style={{ marginBottom: 15 }}>
+        <label style={{ fontWeight: 500 }}>Name:</label>
+        <input
+          type="text"
+          value={editingEvents.name || ""}
+          onChange={(e) =>
+            setEditingEvents({ ...editingEvents, name: e.target.value })
+          }
+          style={{
+            width: "100%",
+            padding: "8px",
+            borderRadius: "5px",
+            border: "1px solid #ccc",
+            marginTop: 5,
+          }}
+        />
+      </div>
+
+      <div style={{ marginBottom: 15 }}>
+        <label style={{ fontWeight: 500 }}>Start:</label>
+        <input
+          type="datetime-local"
+          value={editingEvents.startDateTime || ""}
+          onChange={(e) =>
+            setEditingEvents({
+              ...editingEvents,
+              startDateTime: e.target.value,
+            })
+          }
+          style={{
+            width: "100%",
+            padding: "8px",
+            borderRadius: "5px",
+            border: "1px solid #ccc",
+            marginTop: 5,
+          }}
+        />
+      </div>
+
+      <div style={{ marginBottom: 15 }}>
+        <label style={{ fontWeight: 500 }}>End:</label>
+        <input
+          type="datetime-local"
+          value={editingEvents.endDateTime || ""}
+          onChange={(e) =>
+            setEditingEvents({
+              ...editingEvents,
+              endDateTime: e.target.value,
+            })
+          }
+          style={{
+            width: "100%",
+            padding: "8px",
+            borderRadius: "5px",
+            border: "1px solid #ccc",
+            marginTop: 5,
+          }}
+        />
+      </div>
+
+      <div style={{ marginBottom: 15 }}>
+        <label style={{ fontWeight: 500 }}>Location:</label>
+        <input
+          type="text"
+          value={editingEvents.location || ""}
+          onChange={(e) =>
+            setEditingEvents({ ...editingEvents, location: e.target.value })
+          }
+          style={{
+            width: "100%",
+            padding: "8px",
+            borderRadius: "5px",
+            border: "1px solid #ccc",
+            marginTop: 5,
+          }}
+        />
+      </div>
+
+      <div style={{ marginBottom: 25 }}>
+        <label style={{ fontWeight: 500 }}>Extra Expenses:</label>
+        <input
+          type="number"
+          value={editingEvents.extraExpenses || 0}
+          onChange={(e) =>
+            setEditingEvents({
+              ...editingEvents,
+              extraExpenses: parseInt(e.target.value) || 0,
+            })
+          }
+          style={{
+            width: "100%",
+            padding: "8px",
+            borderRadius: "5px",
+            border: "1px solid #ccc",
+            marginTop: 5,
+          }}
+        />
+      </div>
+
+      {/* Staff Section */}
+    {/* Staff Details */}
+<h4
+  style={{
+    marginTop: 10,
+    marginBottom: 10,
+    fontSize: "18px",
+    borderBottom: "1px solid #ddd",
+    paddingBottom: 6,
+  }}
+>
+  Staff Details
+</h4>
+
+{Object.entries(editingEvents?.staff || {}).map(([role, data]) => {
+  const assigned = (data.male || 0) + (data.female || 0);
+  const required = data.required || assigned;
+
+  return (
+    <div
+      key={role}
+      style={{
+        border: "1px solid #ccc",
+        borderRadius: "6px",
+        padding: "12px",
+        marginBottom: "15px",
+        background: "#f9f9f9",
+      }}
+    >
+      {/* Role */}
+      <strong
+        style={{
+          display: "block",
+          marginBottom: 8,
+          fontSize: "16px",
+          color: "#333",
+        }}
+      >
+        {role}
+      </strong>
+
+      {/* Male/Female inputs */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 6,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <label style={{ fontSize: "14px" }}>Male:</label>
+          <input
+            type="number"
+            min="0"
+            value={data.male || 0}
+            onChange={(e) =>
+              setEditingEvents({
+                ...editingEvents,
+                staff: {
+                  ...editingEvents.staff,
+                  [role]: {
+                    ...data,
+                    male: parseInt(e.target.value) || 0,
+                  },
+                },
+              })
+            }
+            style={{
+              width: "60px",
+              padding: "4px 6px",
+              borderRadius: "4px",
+              border: "1px solid #ccc",
+              fontSize: "13px",
+            }}
+          />
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <label style={{ fontSize: "14px" }}>Female:</label>
+          <input
+            type="number"
+            min="0"
+            value={data.female || 0}
+            onChange={(e) =>
+              setEditingEvents({
+                ...editingEvents,
+                staff: {
+                  ...editingEvents.staff,
+                  [role]: {
+                    ...data,
+                    female: parseInt(e.target.value) || 0,
+                  },
+                },
+              })
+            }
+            style={{
+              width: "60px",
+              padding: "4px 6px",
+              borderRadius: "4px",
+              border: "1px solid #ccc",
+              fontSize: "13px",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Assigned/Required count */}
+      <div
+        style={{
+          textAlign: "left",
+          fontSize: "13px",
+          color: "#555",
+          marginBottom: 6,
+        }}
+      >
+        {assigned}/{required}
+      </div>
+
+      {/* Progress bar */}
+      <div
+        style={{
+          height: "8px",
+          background: "#e0e0e0",
+          borderRadius: "4px",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${(assigned / required) * 100}%`,
+            background: assigned >= required ? "#4caf50" : "#f57c00",
+            transition: "width 0.3s ease",
+          }}
+        />
+      </div>
+    </div>
+  );
+})}
+
+
+      {/* Buttons */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "10px",
+          marginTop: 10,
+        }}
+      >
+        <button
+          onClick={handleSave}
+          style={{
+            background: "#4caf50",
+            color: "#fff",
+            padding: "8px 16px",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+        >
+          Save
+        </button>
+        <button
+          onClick={() => setEditingEvents(null)}
+          style={{
+            background: "#ccc",
+            color: "#000",
+            padding: "8px 16px",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+    </div>
+        )}
+  
+           {activeTab === "Event History" && (
+             <div>
+      <input
+        type="text"
+        placeholder="Search by name, staff role, or date..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        style={{ padding: "8px", width: "300px", marginBottom: "10px", borderRadius: "6px", border: "1px solid #ccc" }}
+      />
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 900 }}>
+          <thead>
+            <tr>
+              <th style={thStyle} onClick={() => handleSort("name")}>
+                Name {sortConfig.key === "name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+              </th>
+              <th style={thStyle} onClick={() => handleSort("startDateTime")}>
+                Start {sortConfig.key === "startDateTime" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+              </th>
+              <th style={thStyle} onClick={() => handleSort("endDateTime")}>
+                End {sortConfig.key === "endDateTime" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+              </th>
+              <th style={thStyle}>Location</th>
+              <th style={thStyle}>Staff & Budget</th>
+              <th style={thStyle}>Extra Expenses</th>
+              <th style={thStyle}>Status</th>
+              <th style={thStyle}>All Payments Made</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredEventss.length > 0 ? (
+              filteredEventss.map((event) => (
+                <tr key={event.id}>
+                  <td style={tdStyle}>{event.name}</td>
+                  <td style={tdStyle}>{formatDateTime(event.startDateTime)}</td>
+                  <td style={tdStyle}>{formatDateTime(event.endDateTime)}</td>
+                  <td style={tdStyle}>{event.location}</td>
+                  <td style={tdStyle}>
+                    {Object.entries(event.staff).map(([role, data]) => (
+                      <div key={role}>
+                        {role}: {data.male + data.female} ({calculateStaffBudget(data)}$) {data.paid ? "✅" : "❌"}
+                      </div>
                     ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
-
-        {/* Edit Event Modal */}
-        {editingEvent && activeTab === "Upcoming Events" && (
-          <div style={{ marginTop: "20px", padding: "10px", border: "1px solid black" }}>
-            <h3>Edit Event: {editingEvent.name}</h3>
-            <label>
-              Name:{" "}
-              <input
-                type="text"
-                value={editingEvent.name}
-                onChange={(e) =>
-                  setEditingEvent({ ...editingEvent, name: e.target.value })
-                }
-              />
-            </label>
-            <br />
-            <label>
-              Start Date & Time:
-              <input
-                type="datetime-local"
-                value={editingEvent.startDateTime || ""}
-                onChange={(e) =>
-                  setEditingEvent({ ...editingEvent, startDateTime: e.target.value })
-                }
-              />
-            </label>
-            <br />
-            <label>
-              End Date & Time:
-              <input
-                type="datetime-local"
-                value={editingEvent.endDateTime || ""}
-                onChange={(e) =>
-                  setEditingEvent({ ...editingEvent, endDateTime: e.target.value })
-                }
-              />
-            </label>
-
-            <br />
-            <label>
-              Location:{" "}
-              <input
-                type="text"
-                value={editingEvent.location || ""}
-                onChange={(e) =>
-                  setEditingEvent({ ...editingEvent, location: e.target.value })
-                }
-              />
-            </label>
-            <br />
-            <label>
-              Priority:{" "}
-              <input
-                type="number"
-                value={editingEvent.priority || 1}
-                onChange={(e) =>
-                  setEditingEvent({ ...editingEvent, priority: parseInt(e.target.value, 10) })
-                }
-              />
-            </label>
-            <br />
-            <label>
-              Staff:{" "}
-              <input
-                type="text"
-                value={editingEvent.staff || ""}
-                onChange={(e) =>
-                  setEditingEvent({ ...editingEvent, staff: e.target.value })
-                }
-              />
-            </label>
-            <br />
-            <label>
-              Budget:{" "}
-              <input
-                type="number"
-                value={editingEvent.budget || 0}
-                onChange={(e) =>
-                  setEditingEvent({ ...editingEvent, budget: parseInt(e.target.value, 10) })
-                }
-              />
-            </label>
-            <br />
-            <label>
-              Payment Mode:{" "}
-              <input
-                type="text"
-                value={editingEvent.paymentMode || ""}
-                onChange={(e) =>
-                  setEditingEvent({ ...editingEvent, paymentMode: e.target.value })
-                }
-              />
-            </label>
-            <br />
-            <label>
-              Attachments:{" "}
-              <input
-                type="file"
-                multiple
-                onChange={(e) =>
-                  setEditingEvent({
-                    ...editingEvent,
-                    attachments: Array.from(e.target.files),
-                  })
-                }
-              />
-            </label>
-            <br />
-            <button
-              onClick={() => {
-                setEvents((prev) =>
-                  prev.map((ev) => (ev.id === editingEvent.id ? editingEvent : ev))
-                );
-                setEditingEvent(null); // close editor
-              }}
-            >
-              Save
-            </button>
-            <button onClick={() => setEditingEvent(null)}>Cancel</button>
-          </div>
-        )}
-
-        {activeTab === "Staff Applications" && (
-          <div>
-            <h2>Pending Staff Applications</h2>
-            {applications.length === 0 ? (
-              <p>No new applications</p>
+                  </td>
+                  <td style={tdStyle}>
+                    {event.extraExpenses > 0 ? `${event.extraExpenses}$ ${event.extraPaid ? "✅" : "❌"}` : "-"}
+                  </td>
+                  <td style={tdStyle}>{event.status || "Completed"}</td>
+                  <td style={tdStyle}>{isAllPaid(event) ? "✅ Paid" : "❌ Pending"}</td>
+                </tr>
+              ))
             ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Staff Name</th>
-                    <th style={thStyle}>Event</th>
-                    <th style={thStyle}>Distance (km)</th>
-                    <th style={thStyle}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {applications.map((app) => {
-                    const event = events.find(e => e.id === app.eventId);
-                    const dist = getDistance(event.lat, event.lon, app.lat, app.lon).toFixed(1);
-                    if (dist > 10) return null; // optional distance filter
-                    return (
-                      <tr key={app.id}>
-                        <td style={tdStyle}>{app.staffName}</td>
-                        <td style={tdStyle}>{event?.name}</td>
-                        <td style={tdStyle}>{dist}</td>
-                        <td style={tdStyle}>
-                          <button
-                            style={{ background: "#10b981", color: "#fff", border: "none", padding: "5px 8px", borderRadius: 4 }}
-                            onClick={() => handleAccept(app.id)}
-                          >Accept</button>
-                          <button
-                            style={{ background: "#ef4444", color: "#fff", border: "none", padding: "5px 8px", borderRadius: 4, marginLeft: 8 }}
-                            onClick={() => handleReject(app.id)}
-                          >Reject</button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <tr>
+                <td style={tdStyle} colSpan={8}>No events found</td>
+              </tr>
             )}
-          </div>
-        )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  
+           )}
 
-
+    
+    
         {/* Staff List */}
         {activeTab === "Staff List" && (
-          <div style={{ padding: 10 }}>
-            <h2>Staff Ratings</h2>
+         <div style={{ padding: 20, fontFamily: "Arial, sans-serif" }}>
+      <h2>Staff List</h2>
+      <StaffDirectoryUnique staffList={staffRecords} onSelect={setSelectedStaffId} />
 
-            {/* Rating Form */}
-            <div style={{ marginBottom: 20, padding: 15, background: "#f3f4f6", borderRadius: 8 }}>
-              <label>Staff Name</label>
-              <input
-                type="text"
-                value={staffSearch || ""}
-                onChange={(e) => setStaffSearch(e.target.value)}
-                placeholder="Start typing staff name..."
-                list="staffList"
-                style={{ width: "100%", marginBottom: 10, padding: 8 }}
-              />
-              <datalist id="staffList">
-                {staff.map((s) => (
-                  <div key={s.id}>
-                    <p>{s.name}</p>
-                    <input
-                      type="number"
-                      min={1}
-                      max={5}
-                      value={s.rating || 0}
-                      onChange={(e) => handleRating(s.id, Number(e.target.value))}
-                    />
-                  </div>
-                ))}
+      <StaffDetailModal
+        staff={selectedStaff}
+        events={selectedEvents}
+        ratingMap={starRatingMap}
+        setRatingMap={setStarRatingMap}
+        onClose={() => setSelectedStaffId(null)}
+        onRate={handleRate}
+        onPay={handleOpenPayment}
+      />
 
-              </datalist>
-
-              <label>Rating</label>
-              <div style={{ marginBottom: 10 }}>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <span
-                    key={i}
-                    onClick={() => setStaffRating(i)}
-                    style={{
-                      cursor: "pointer",
-                      fontSize: 24,
-                      color: i <= staffRating ? "#f59e0b" : "#d1d5db",
-                      marginRight: 5
-                    }}
-                  >★</span>
-                ))}
-              </div>
-
-              <label>Review</label>
-              <textarea
-                value={staffReview || ""}
-                onChange={(e) => setStaffReview(e.target.value)}
-                placeholder="Write review..."
-                style={{ width: "100%", marginBottom: 10, padding: 8 }}
-              />
-
-              <label>Payment</label>
-              <input
-                type="number"
-                value={staffPayment || 0}
-                readOnly
-                style={{ width: "100%", marginBottom: 10, padding: 8, background: "#e5e7eb" }}
-              />
-
-              <button
-                onClick={() => {
-                  if (!staffSearch) return alert("Select staff");
-                  const sObj = staff.find(s => s.name === staffSearch);
-                  if (!sObj) return alert("Staff not found");
-                  const newEntry = {
-                    name: staffSearch,
-                    rating: staffRating,
-                    review: staffReview,
-                    payment: sObj.payment
-                  };
-                  setStaffRatings(prev => [...prev, newEntry]);
-                  setStaffSearch("");
-                  setStaffRating(0);
-                  setStaffReview("");
-                  setStaffPayment(0);
-                }}
-                style={{ background: "#10b981", color: "#fff", padding: "8px 12px", border: "none", borderRadius: 5, cursor: "pointer" }}
-              >
-                Add Rating
-              </button>
-            </div>
-
-            {/* Ratings Table */}
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th style={{ padding: 10, borderBottom: "1px solid #ccc" }}>Staff Name</th>
-                  <th style={{ padding: 10, borderBottom: "1px solid #ccc" }}>Rating</th>
-                  <th style={{ padding: 10, borderBottom: "1px solid #ccc" }}>Review</th>
-                  <th style={{ padding: 10, borderBottom: "1px solid #ccc" }}>Payment</th>
-                  <th style={{ padding: 10, borderBottom: "1px solid #ccc" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {staffRatings && staffRatings.length > 0 ? staffRatings.map((r, i) => (
-                  <tr key={i}>
-                    <td style={{ padding: 10, borderBottom: "1px solid #eee" }}>{r.name}</td>
-                    <td style={{ padding: 10, borderBottom: "1px solid #eee" }}>{r.rating} ⭐</td>
-                    <td style={{ padding: 10, borderBottom: "1px solid #eee" }}>{r.review}</td>
-                    <td style={{ padding: 10, borderBottom: "1px solid #eee" }}>${r.payment}</td>
-                    <td style={{ padding: 10, borderBottom: "1px solid #eee" }}>
-                      <button onClick={() => handleEditRating(i)} style={{ marginRight: 5, cursor: "pointer" }}>✏️</button>
-                      <button onClick={() => handleDeleteRating(i)} style={{ cursor: "pointer" }}>🗑️</button>
-                    </td>
-                  </tr>
-                )) : (
-                  <tr><td colSpan={5} style={{ padding: 10, textAlign: "center" }}>No ratings yet</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+      <PaymentModalUnique
+        open={paymentModalState.open}
+        event={selectedEvents[paymentModalState.eventIdx]}
+        onClose={() => setPaymentModalState({ open: false, eventIdx: null })}
+        onSubmit={handlePaymentSubmit}
+      />
+    </div>
         )}
-
 
         {/* Profile */}
         {activeTab === "Profile" && (
@@ -1124,7 +1578,8 @@ const tdStyle = {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            zIndex: 999
+            zIndex: 999,
+            borderRadius: 8
           }}>
             <div style={{
               width: "90%",
