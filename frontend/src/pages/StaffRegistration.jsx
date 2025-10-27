@@ -7,7 +7,7 @@ import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
-import { registerStaff } from "../api/api";
+import { registerStaff, sendOtp} from "../api/api";
 import socket from "../utils/socket";
 import { useAuth } from "../context/AuthContext";
 
@@ -20,7 +20,7 @@ L.Icon.Default.mergeOptions({
 });
 
 // --- OTP generator ---
-const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
+// const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // --- Map Marker Component ---
 function LocationMarker({ setForm, coords, setCoords }) {
@@ -81,10 +81,14 @@ export default function StaffRegistration({ go, loading, setLoading }) {
   });
   const [errors, setErrors] = useState({});
   const [preview, setPreview] = useState(null);
-  const [generatedOtp, setGeneratedOtp] = useState("");
-  const [otpExpiry, setOtpExpiry] = useState(null);
-  const [otpCountdown, setOtpCountdown] = useState(0);
-  const [passwordStrength, setPasswordStrength] = useState({ label: "", color: "" });
+  // const [generatedOtp, setGeneratedOtp] = useState("");
+  // const [otpExpiry, setOtpExpiry] = useState(null);
+  // const [otpCountdown, setOtpCountdown] = useState(0);
+   const [otpCountdown, setOtpCountdown] = useState(0);
+    const [otpToken, setOtpToken] = useState("");
+    const [serverOtp, setServerOtp] = useState(""); // Dev helper: show OTP returned by backend
+  const [showOtp, setShowOtp] = useState(false);
+    const [passwordStrength, setPasswordStrength] = useState({ label: "", color: "" });
   const [coords, setCoords] = useState([20.5937, 78.9629]);
   const [completedSteps, setCompletedSteps] = useState([]);
   const formRef = useRef(null);
@@ -110,16 +114,25 @@ export default function StaffRegistration({ go, loading, setLoading }) {
     else setPasswordStrength({ label: "Medium", color: "orange" });
   }, [form.password]);
 
-  // --- OTP Countdown ---
-  useEffect(() => {
-    if (!otpExpiry) return;
-    const timer = setInterval(() => {
-      const remaining = Math.max(0, Math.floor((otpExpiry - Date.now()) / 1000));
-      setOtpCountdown(remaining);
-      if (remaining === 0) clearInterval(timer);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [otpExpiry]);
+  // // --- OTP Countdown ---
+  // useEffect(() => {
+  //   if (!otpExpiry) return;
+  //   const timer = setInterval(() => {
+  //     const remaining = Math.max(0, Math.floor((otpExpiry - Date.now()) / 1000));
+  //     setOtpCountdown(remaining);
+  //     if (remaining === 0) clearInterval(timer);
+  //   }, 1000);
+  //   return () => clearInterval(timer);
+  // }, [otpExpiry]);
+
+   // OTP countdown
+    useEffect(() => {
+      if (otpCountdown > 0) {
+        const timer = setInterval(() => setOtpCountdown(prev => (prev <= 1 ? 0 : prev - 1)), 1000);
+        return () => clearInterval(timer);
+      }
+    }, [otpCountdown]);
+  
 
   // --- Scroll to form on step change ---
   useEffect(() => {
@@ -127,7 +140,7 @@ export default function StaffRegistration({ go, loading, setLoading }) {
   }, [step]);
 
   // --- Form input handler ---
-  const change = (e) => {
+  const handleChange = (e) => {
     const { name, type, value, checked, files } = e.target;
     setErrors(prev => ({ ...prev, [name]: "" }));
 
@@ -157,7 +170,6 @@ export default function StaffRegistration({ go, loading, setLoading }) {
 
   const validateStep2 = () => {
     const newErrors = {};
-    if (!form.role) newErrors.role = "Select role";
     if (!form.skills.length) newErrors.skills = "Select at least one skill";
     if (!form.city) newErrors.city = "Enter city";
     if (!form.availability) newErrors.availability = "Enter availability";
@@ -167,21 +179,49 @@ export default function StaffRegistration({ go, loading, setLoading }) {
     return newErrors;
   };
 
-  const handleNext = () => {
+   // Move to next step
+    const handleNext = async () => {
     const newErrors = step === 1 ? validateStep1() : validateStep2();
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length) return;
-    setCompletedSteps(prev => [...new Set([...prev, step])]);
-
-    if (step === 2) {
-      const otp = generateOtp();
-      setGeneratedOtp(otp);
-      setOtpExpiry(Date.now() + 120000); // 2 min
-      alert(`📩 Demo OTP: ${otp}`);
+    if (Object.keys(newErrors).length > 0) {
+      alert(Object.values(newErrors).join("\n")); // Show all errors in alert
+      return setErrors(newErrors);
     }
+      if (step === 2) {
+        try {
+          // Backend expects phone at /api/otp/send-otp
+          const res = await sendOtp({ phone: form.phone });
+          // If backend returns just message/otp, we proceed without token
+          setOtpToken(res?.otpToken || "");
+          if (res?.otp) setServerOtp(String(res.otp));
+          setOtpCountdown(120);
+        } catch (err) {
+          console.error("OTP error:", err);
+          const msg = err.response?.data?.message || "Failed to send OTP";
+    alert(msg);
+        }
+      }
+  
+      setCompletedSteps(prev => [...new Set([...prev, step])]);
+      setStep(prev => prev + 1);
+    };
 
-    setStep(prev => prev + 1);
-  };
+   // Handle OTP verification // Handle OTP resend
+    const handleResendOtp = async () => {
+      try {
+        // Send new OTP request
+        const res = await sendOtp({ phone: form.phone });
+        // Update with new OTP
+        if (res?.otp) setServerOtp(String(res.otp));
+        // Reset countdown
+        setOtpCountdown(120);
+        // Clear current OTP input
+        setForm(prev => ({ ...prev, otp: "" }));
+        alert("New OTP sent successfully!");
+      } catch (err) {
+        console.error("OTP resend error:", err);
+        alert("Failed to resend OTP");
+      }
+    };
 
   // --- City search ---
   const handleCitySearch = async () => {
@@ -201,9 +241,7 @@ export default function StaffRegistration({ go, loading, setLoading }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
-    if (!otpExpiry || Date.now() > otpExpiry) newErrors.otp = "OTP expired";
-    else if (!form.otp) newErrors.otp = "Enter OTP";
-    else if (form.otp !== generatedOtp) newErrors.otp = "Invalid OTP";
+     if (!form.otp) newErrors.otp = "Enter OTP";
     if (!form.terms) newErrors.terms = "Accept Terms & Conditions";
     if (Object.keys(newErrors).length > 0) return setErrors(newErrors);
 
@@ -215,14 +253,15 @@ export default function StaffRegistration({ go, loading, setLoading }) {
         else if (k === "profilePic" && form.profilePic) fd.append("profilePic", form.profilePic);
         else fd.append(k, form[k]);
       }
+      if (otpToken) fd.append("otpToken", otpToken);
 
       const data = await registerStaff(fd);
       if (!data.success) alert(data.message || "⚠️ Registration failed");
       else {
-        alert("🎉 Registration successful!");
+        alert("🎉 Registration successful! Please log in.");
         login(data.token, data.staff); // ✅ auto login
         socket.emit("staff-registered", { id: data.staff._id, name: data.staff.fullName });
-        go("staff-dashboard");
+        go("staff-login");
       }
 
     } catch (err) { console.error(err); alert(err.message || "⚠️ Server connection failed"); }
@@ -249,19 +288,19 @@ export default function StaffRegistration({ go, loading, setLoading }) {
             {/* --- Steps --- */}
             {step===1 && <>
               <label>Full Name *</label>
-              <input name="fullName" value={form.fullName} onChange={change} style={inputStyle} placeholder="Full Name"/>
+              <input name="fullName" value={form.fullName} onChange={handleChange} style={inputStyle} placeholder="Full Name"/>
               {errors.fullName && <p style={{color:"red", fontSize:12}}>{errors.fullName}</p>}
 
               <label>Email *</label>
-              <input type="email" name="email" value={form.email} onChange={change} style={inputStyle} placeholder="Email"/>
+              <input type="email" name="email" value={form.email} onChange={handleChange} style={inputStyle} placeholder="Email"/>
               {errors.email && <p style={{color:"red", fontSize:12}}>{errors.email}</p>}
 
               <label>Phone *</label>
-              <input name="phone" value={form.phone} onChange={change} style={inputStyle} placeholder="Phone"/>
+              <input name="phone" value={form.phone} onChange={handleChange} style={inputStyle} placeholder="Phone"/>
               {errors.phone && <p style={{color:"red", fontSize:12}}>{errors.phone}</p>}
 
               <label>Password *</label>
-              <input type="password" name="password" value={form.password} onChange={change} style={inputStyle} placeholder="Password"/>
+              <input type="password" name="password" value={form.password} onChange={handleChange} style={inputStyle} placeholder="Password"/>
               {errors.password && <p style={{color:"red", fontSize:12}}>{errors.password}</p>}
 
               {form.password && <div style={{ height:8, width:"100%", borderRadius:4, background:"#555", marginTop:4 }}>
@@ -270,17 +309,8 @@ export default function StaffRegistration({ go, loading, setLoading }) {
             </>}
 
             {step===2 && <>
-              <label>Role *</label>
-              <select name="role" value={form.role} onChange={change} style={inputStyle}>
-                <option value="">Select Role</option>
-                <option value="Waiter">Waiter</option>
-                <option value="Chef">Chef</option>
-                <option value="Cleaner">Cleaner</option>
-              </select>
-              {errors.role && <p style={{color:"red", fontSize:12}}>{errors.role}</p>}
-
-              <label>Skills *</label>
-              <select name="skills" multiple value={form.skills} onChange={change} style={inputStyle}>
+            <label>Skills *</label>
+              <select name="skills" multiple value={form.skills} onChange={handleChange} style={inputStyle}>
                 <option value="Service">Service</option>
                 <option value="Cooking">Cooking</option>
                 <option value="Cleaning">Cleaning</option>
@@ -289,7 +319,7 @@ export default function StaffRegistration({ go, loading, setLoading }) {
               {errors.skills && <p style={{color:"red", fontSize:12}}>{errors.skills}</p>}
 
               <label>City *</label>
-              <input name="city" value={form.city} onChange={change} style={inputStyle} placeholder="City"/>
+              <input name="city" value={form.city} onChange={handleChange} style={inputStyle} placeholder="City"/>
               <button type="button" onClick={handleCitySearch} style={{ marginBottom: 8, padding:"6px 12px", borderRadius:6 }}>Search City</button>
               {errors.city && <p style={{color:"red", fontSize:12}}>{errors.city}</p>}
 
@@ -301,11 +331,11 @@ export default function StaffRegistration({ go, loading, setLoading }) {
               </MapContainer>
 
               <label>Availability *</label>
-              <input name="availability" value={form.availability} onChange={change} style={inputStyle} placeholder="Availability"/>
+              <input name="availability" value={form.availability} onChange={handleChange} style={inputStyle} placeholder="Availability"/>
               {errors.availability && <p style={{color:"red", fontSize:12}}>{errors.availability}</p>}
 
               <label>Gender *</label>
-              <select name="gender" value={form.gender} onChange={change} style={inputStyle}>
+              <select name="gender" value={form.gender} onChange={handleChange} style={inputStyle}>
                 <option value="">Select Gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
@@ -314,7 +344,7 @@ export default function StaffRegistration({ go, loading, setLoading }) {
               {errors.gender && <p style={{color:"red", fontSize:12}}>{errors.gender}</p>}
 
               <label>Languages *</label>
-              <select name="languages" multiple value={form.languages} onChange={change} style={inputStyle}>
+              <select name="languages" multiple value={form.languages} onChange={handleChange} style={inputStyle}>
                 <option value="English">English</option>
                 <option value="Hindi">Hindi</option>
                 <option value="Gujarati">Gujarati</option>
@@ -323,19 +353,54 @@ export default function StaffRegistration({ go, loading, setLoading }) {
               {errors.languages && <p style={{color:"red", fontSize:12}}>{errors.languages}</p>}
 
               <label>Profile Picture *</label>
-              <input type="file" name="profilePic" onChange={change} accept="image/*" style={inputStyle}/>
+              <input type="file" name="profilePic" onChange={handleChange} accept="image/*" style={inputStyle}/>
               {preview && <img src={preview} alt="preview" style={{ width:100, height:100, borderRadius:8, marginBottom:8 }}/>}
               {errors.profilePic && <p style={{color:"red", fontSize:12}}>{errors.profilePic}</p>}
             </>}
 
             {step===3 && <>
-              <label>Enter OTP *</label>
-              <input name="otp" value={form.otp} onChange={change} style={inputStyle} placeholder="OTP"/>
-              {otpCountdown > 0 ? <p>Expires in: {otpCountdown}s</p> : <p style={{color:"red"}}>OTP expired. Go back to Step 2 to resend.</p>}
-              {errors.otp && <p style={{color:"red", fontSize:12}}>{errors.otp}</p>}
+            <label>Enter OTP *</label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showOtp ? "text" : "password"}
+                    name="otp"
+                    value={form.otp}
+                    onChange={handleChange}
+                    placeholder="Enter OTP"
+                    style={inputStyle}
+                  />
+                  <span onClick={() => setShowOtp(prev => !prev)} style={{ position: "absolute", right: 12, top: 12, cursor: "pointer" }}>
+                    {showOtp ? "🙈" : "👁️"}
+                  </span>
+                </div>
+                {errors.otp && <p style={{ color: "red", fontSize: 12 }}>{errors.otp}</p>}
 
-              <label>
-                <input type="checkbox" name="terms" checked={form.terms} onChange={change}/> I accept Terms & Conditions *
+                {/* Dev-only helper: show OTP returned by backend (not for production) */}
+                {serverOtp && (
+                  <div style={{ marginTop: 8, fontSize: 12, color: "#0f766e", background: "#ccfbf1", padding: 8, borderRadius: 6 }}>
+                    OTP is <strong>{serverOtp}</strong>
+                    <button
+                      type="button"
+                      onClick={() => setForm(prev => ({ ...prev, otp: serverOtp }))}
+                      style={{ marginLeft: 10, padding: "4px 8px", borderRadius: 4, border: "none", background: "#14b8a6", color: "#fff", cursor: "pointer" }}
+                    >
+                      Autofill
+                    </button>
+                  </div>
+                )}
+
+                <div style={{ height: 8, background: "#555", borderRadius: 4, marginTop: 8 }}>
+                  <div style={{ height: "100%", width: `${(otpCountdown / 120) * 100}%`, background: "#00ffcc", borderRadius: 4, transition: "width 1s linear" }} />
+                </div>
+                {otpCountdown === 0 && (
+                  <button type="button" onClick={handleResendOtp} style={{
+                    marginTop: 10, padding: 10, borderRadius: 6, background: "#00ffcc", color: "#333",
+                    border: "none", cursor: "pointer", animation: "pulse 1s infinite"
+                  }}>Resend OTP</button>
+                )}
+
+               <label style={{ display: "block", marginTop: 15 }}>
+                <input type="checkbox" name="terms" checked={form.terms} onChange={handleChange}/> I accept Terms & Conditions *
               </label>
               {errors.terms && <p style={{color:"red", fontSize:12}}>{errors.terms}</p>}
             </>}

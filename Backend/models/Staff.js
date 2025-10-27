@@ -7,7 +7,6 @@ const staffSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     phone: { type: String, required: true, trim: true },
     password: { type: String, required: true },
-    role: { type: String, default: "staff" },
     skills: { type: [String], default: [] },
     experience: { type: String, default: "" },
     location: {

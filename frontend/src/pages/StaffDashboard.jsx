@@ -110,7 +110,6 @@ export default function StaffDashboard({ bubbleCount = 25 }) {
       endDate: "2025-09-21",
       endTime: "23:00",
       location: "Banquet Hall A",
-      priority: "High",
       staff: { Waiter: 5, Chef: 2 },
       budget: 5000,
       status: "Open"
@@ -122,41 +121,65 @@ export default function StaffDashboard({ bubbleCount = 25 }) {
       endDate: "2025-09-25",
       endTime: "22:00",
       location: "Conference Hall B",
-      priority: "Medium",
       staff: { Waiter: 3, Chef: 1 },
       budget: 3000,
       status: "Assigned"
     }
   ]);
 
-  const eventHistory = [
-    {
-      name: "Music Festival",
-      startDate: "2025-09-01",
-      startTime: "10:00",
-      endDate: "2025-09-01",
-      endTime: "18:00",
-      location: "Open Ground",
-      workedRoles: ["Serving", "Driving"],
-      budget: 2000,
-      paymentMode: "Cash",
-      organiserReview: "Good work overall",
-      status: "Completed",
-    },
-    {
-      name: "Corporate Gala",
-      startDate: "2025-09-05",
-      startTime: "19:00",
-      endDate: "2025-09-05",
-      endTime: "23:00",
-      location: "Hotel Ballroom",
-      workedRoles: ["Serving"],
-      budget: 1500,
-      paymentMode: "UPI",
-      organiserReview: "Not attended",
-      status: "Not Attended",
-    }
-  ];
+ // 🧾 Event History Data
+const eventHistory = [
+  {
+    name: "Music Festival",
+    startDate: "2025-09-01",
+    startTime: "10:00",
+    endDate: "2025-09-01",
+    endTime: "18:00",
+    location: "Open Ground",
+    workedRoles: ["Driving"],
+    budget: 2000,
+    paymentMode: "Cash",
+    organiserReview: "Good work overall",
+    status: "Completed",
+    paymentReceived: true, // ✅ Paid
+  },
+  {
+    name: "Corporate Gala",
+    startDate: "2025-09-05",
+    startTime: "19:00",
+    endDate: "2025-09-05",
+    endTime: "23:00",
+    location: "Hotel Ballroom",
+    workedRoles: ["Serving"],
+    budget: 1500,
+    paymentMode: "UPI",
+    organiserReview: "Not attended",
+    status: "Not Attended",
+    paymentReceived: false,
+  },
+  {
+    name: "Festival",
+    startDate: "2025-09-10",
+    startTime: "08:00",
+    endDate: "2025-09-10",
+    endTime: "16:00",
+    location: "Ground Arena",
+    workedRoles: ["Cleaning"],
+    budget: 1800,
+    paymentMode: "Cash",
+    organiserReview: "Average work",
+    status: "Completed",
+    paymentReceived: false, // ✅ Payment pending
+  },
+];
+
+// 💰 Calculate Total Earnings (only for paid events)
+const totalEarnings = eventHistory
+  .filter((e) => e.paymentReceived)
+  .reduce((sum, e) => sum + e.budget, 0);
+
+console.log("Total Earnings:", totalEarnings);
+
 
 
 
@@ -187,7 +210,7 @@ export default function StaffDashboard({ bubbleCount = 25 }) {
     { name: "Profile", icon: "👤" },
   ];
 
-  const totalEarnings = payments.reduce((sum, p) => sum + p.amount, 0);
+  // const totalEarnings = payments.reduce((sum, p) => sum + p.amount, 0);
 
   const thStyle = { padding: 10, textAlign: "center" };
   const tdStyle = { padding: 10, textAlign: "center", verticalAlign: "middle" };
@@ -364,22 +387,27 @@ export default function StaffDashboard({ bubbleCount = 25 }) {
               ].map((card) => (
                 <div
                   key={card.title}
+                  onClick={() => setActiveTab(card.title)}
                   style={{
-                    flex: "1",
+                    flex: 1,
                     minWidth: "150px",
                     padding: "20px",
-                    background: "#fff",
-                    borderRadius: "8px",
+                    background: activeTab === card.title ? "#10b981" : "#fff",
+                    borderRadius: 8,
                     textAlign: "center",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
                     cursor: "pointer",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: 120,
+                    color: activeTab === card.title ? "#fff" : "#000",
+                    transition: "0.3s"
                   }}
-                  onClick={() => setActiveTab(card.title)}
                 >
-                  <h3 style={{ fontSize: "16px", marginBottom: "8px" }}>{card.title}</h3>
-                  <p style={{ fontSize: "22px", fontWeight: "bold", color: "#111827" }}>
-                    {card.title === "Payments" ? `$${card.count}` : card.count}
-                  </p>
+                    <div style={{ fontSize: 30, fontWeight: "bold" }}>{   card.title === "Payments" ? `$${card.count}` : card.count}</div>
+                  <div style={{ fontSize: 16, marginTop: 10 }}>{card.title}</div>
                 </div>
               ))}
             </div>
@@ -443,7 +471,7 @@ export default function StaffDashboard({ bubbleCount = 25 }) {
           <>
             <h3>Applied Events</h3>
             <Table
-              columns={["Event Name", "Start", "End", "Location", "Priority", "Staff", "Budget", "Payment Mode", "Attachments", "Status"]}
+              columns={["Event Name", "Start", "End", "Location", "Staff", "Budget",  "Status"]}
               data={appliedEventsList.map(applied => {
                 // Find the corresponding event details
                 const event = upcomingEvents.find(e => e.name === applied.name);
@@ -455,11 +483,8 @@ export default function StaffDashboard({ bubbleCount = 25 }) {
                   endDate: event?.endDate || "",
                   endTime: event?.endTime || "",
                   location: event?.location || "",
-                  priority: event?.priority || "",
                   staff: event?.staff || {},
                   budget: event?.budget || "",
-                  paymentMode: event?.paymentMode || "",
-                  attachments: event?.attachments || [],
                   status: applied.status || "Pending",
                 };
               })}
@@ -469,15 +494,12 @@ export default function StaffDashboard({ bubbleCount = 25 }) {
                   <td style={tdStyle}>{applied.startDate} {applied.startTime}</td>
                   <td style={tdStyle}>{applied.endDate} {applied.endTime}</td>
                   <td style={tdStyle}>{applied.location}</td>
-                  <td style={tdStyle}>{applied.priority}</td>
                   <td style={tdStyle}>
                     {Object.entries(applied.staff).length
                       ? Object.entries(applied.staff).map(([role, count]) => <div key={role}>{role}: {count}</div>)
                       : "-"}
                   </td>
                   <td style={tdStyle}>${applied.budget}</td>
-                  <td style={tdStyle}>{applied.paymentMode}</td>
-                  <td style={tdStyle}>{applied.attachments.length ? applied.attachments.join(", ") : "-"}</td>
                   <td style={tdStyle}>{applied.status}</td>
                 </tr>
               )}
@@ -498,7 +520,7 @@ export default function StaffDashboard({ bubbleCount = 25 }) {
                   <td style={tdStyle}>{event.startDate} {event.startTime}</td>
                   <td style={tdStyle}>{event.endDate} {event.endTime}</td>
                   <td style={tdStyle}>{event.location}</td>
-                  <td style={tdStyle}>{event.workedRoles.join(", ")}</td>
+                 <td style={tdStyle}>{event.workedRoles || "N/A"}</td>
                   <td style={tdStyle}>${event.budget}</td>
                   <td style={tdStyle}>{event.paymentMode}</td>
                   <td style={tdStyle}>{event.organiserReview}</td>
@@ -509,59 +531,114 @@ export default function StaffDashboard({ bubbleCount = 25 }) {
           </>
         )}
 
-        {activeTab === "Payments" && (
-          <div>
-            <h3>Total Earnings: ${totalEarnings}</h3>
-            <Table
-              columns={["Event Name", "Start", "Location", "Worked Roles", "Budget", "Payment Mode", "Status", "Action"]}
-              data={payments.map(payment => {
-                const event = upcomingEvents.find(e => e.name === payment.event) || {};
-                return {
-                  ...payment,
-                  startDate: event.startDate || "",
-                  startTime: event.startTime || "",
-                  location: event.location || "",
-                  workedRoles: event.workedRoles || [], // Example: ["Serving", "Driving"]
-                  budget: event.budget || "",
-                  paymentMode: event.paymentMode || "",
-                };
-              })}
-              renderRow={(payment, i) => {
-                const isPending = payment.status.toLowerCase() === "pending";
-                return (
-                  <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#f9fafb", color: "#000" }}>
-                    <td style={tdStyle}>{payment.event}</td>
-                    <td style={tdStyle}>{payment.startDate} {payment.startTime}</td>
-                    <td style={tdStyle}>{payment.location}</td>
-                    <td style={tdStyle}>{(payment.workedRoles || []).join(", ")}</td>
-                    <td style={tdStyle}>${payment.budget}</td>
-                    <td style={tdStyle}>{payment.paymentMode}</td>
-                    <td style={tdStyle}>{payment.status}</td>
-                    <td style={tdStyle}>
-                      {isPending ? (
-                        <button
-                          style={{
-                            padding: "5px 10px",
-                            background: "#f59e0b",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: 4,
-                            cursor: "pointer",
-                          }}
-                          onClick={() => alert(`Payment request sent to organiser for ${payment.event}`)}
-                        >
-                          Request Payment
-                        </button>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                  </tr>
-                );
-              }}
-            />
-          </div>
-        )}
+  {activeTab === "Payments" && (
+  <div>
+    {/* 💰 Dynamic Total Earnings (only paid events) */}
+    <h3>
+      Total Earnings: $
+      {eventHistory
+        .filter((e) => e.paymentReceived)
+        .reduce((sum, e) => sum + (e.budget || 0), 0)}
+    </h3>
+
+    <Table
+      columns={[
+        "Event Name",
+        "Start",
+        "Location",
+        "Worked Role",
+        "Budget",
+        "Payment Mode",
+        "Status",
+        "Action",
+      ]}
+      data={eventHistory.map((event) => ({
+        event: event.name,
+        startDate: event.startDate,
+        startTime: event.startTime,
+        location: event.location,
+        workedRole: Array.isArray(event.workedRoles)
+          ? event.workedRoles[0]
+          : event.workedRoles || "N/A",
+        budget: event.budget,
+        paymentMode:
+          event.status?.toLowerCase() === "completed" &&
+          !event.paymentReceived
+            ? "" // leave blank until paid
+            : event.paymentMode,
+        status: event.status,
+        paymentReceived: event.paymentReceived,
+      }))}
+      renderRow={(payment, i) => {
+        const isCompleted =
+          payment.status?.toLowerCase() === "completed";
+        const isNotAttended =
+          payment.status?.toLowerCase() === "not attended";
+        const isPaid = payment.paymentReceived === true;
+
+        return (
+          <tr
+            key={i}
+            style={{
+              background: i % 2 === 0 ? "#fff" : "#f9fafb",
+              color: "#000",
+            }}
+          >
+            <td style={tdStyle}>{payment.event}</td>
+            <td style={tdStyle}>
+              {payment.startDate} {payment.startTime}
+            </td>
+            <td style={tdStyle}>{payment.location}</td>
+            <td style={tdStyle}>{payment.workedRole}</td>
+            <td style={tdStyle}>${payment.budget}</td>
+            <td style={tdStyle}>
+              {payment.paymentMode || "—"}
+            </td>
+            <td style={tdStyle}>{payment.status}</td>
+
+            {/* Action column */}
+            <td style={tdStyle}>
+              {isNotAttended ? (
+                "—"
+              ) : isCompleted ? (
+                isPaid ? (
+                  <span
+                    style={{
+                      color: "green",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Paid
+                  </span>
+                ) : (
+                  <button
+                    style={{
+                      padding: "5px 10px",
+                      background: "#007bff",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 4,
+                      cursor: "pointer",
+                    }}
+                    onClick={() =>
+                      alert(
+                        `Payment request sent to organiser for ${payment.event}`
+                      )
+                    }
+                  >
+                    Request Payment
+                  </button>
+                )
+              ) : (
+                "—"
+              )}
+            </td>
+          </tr>
+        );
+      }}
+    />
+  </div>
+)}
 
       
         {activeTab === "Profile" && (
