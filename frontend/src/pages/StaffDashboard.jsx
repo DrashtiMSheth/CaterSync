@@ -12,7 +12,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require("leaflet/dist/images/marker-shadow.png"),
 });
 
-export default function StaffDashboard({ bubbleCount = 25 }) {
+export default function StaffDashboard({ bubbleCount = 15 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [rating, setRating] = useState(0);
@@ -102,30 +102,430 @@ export default function StaffDashboard({ bubbleCount = 25 }) {
     { name: "Conference", date: "2025-09-19", status: "Approved" },
   ]);
 
-  const [upcomingEvents, setUpcomingEvents] = useState([
+
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfilePreview, setShowProfilePreview] = useState(false);
+
+  // Dummy Data
+  const notifications = [
+    "New event assigned: Wedding Reception",
+    "Payment received for Corporate Dinner",
+    "Your rating was updated by Event Organizer",
+  ];
+
+  // Updated profile with Unsplash image
+  const profilee = {
+    profilePic:
+      "https://images.unsplash.com/photo-1653930351140-d8dca047455e?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8c3RhZmYlMjBpbWFnZXMlMjBmaW5kaW5nJTIwd29ya3xlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&q=60&w=500",
+  };
+
+  // Example ratings from multiple events
+  const eventRatings = [4, 5, 3, 4, 5];
+  const avgRating =
+    eventRatings.length > 0
+      ? (eventRatings.reduce((a, b) => a + b, 0) / eventRatings.length).toFixed(1)
+      : 0;
+
+
+   // ---------- Sample Event Data ----------
+  const [upcomingEvents] = useState([
     {
+      id: 1,
       name: "Wedding Reception",
-      startDate: "2025-09-21",
+      startDate: "2025-11-05",
       startTime: "18:00",
-      endDate: "2025-09-21",
+      endDate: "2025-11-05",
       endTime: "23:00",
       location: "Banquet Hall A",
-      staff: { Waiter: 5, Chef: 2 },
-      budget: 5000,
-      status: "Open"
+      staff: { Waiter: 5, Chef: 2, DJ: 1 },
+      status: "Open",
     },
     {
+      id: 2,
       name: "Corporate Dinner",
-      startDate: "2025-09-25",
+      startDate: "2025-11-07",
       startTime: "19:00",
-      endDate: "2025-09-25",
+      endDate: "2025-11-07",
       endTime: "22:00",
       location: "Conference Hall B",
-      staff: { Waiter: 3, Chef: 1 },
-      budget: 3000,
-      status: "Assigned"
-    }
+      staff: { Waiter: 3, Cleaner: 2, Anchor: 1 },
+      status: "Open",
+    },
   ]);
+
+  // ---------- Role Rates ----------
+  const roleRates = {
+    Waiter: { rate: 50, type: "per hour" },
+    Chef: { rate: 100, type: "per hour" },
+    Cleaner: { rate: 40, type: "per hour" },
+    DJ: { rate: 2000, type: "per event" },
+    Anchor: { rate: 10000, type: "per event" },
+  };
+
+  // ---------- States ----------
+  const [applications, setApplications] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedEventUE, setSelectedEventUE] = useState(null);
+  const [selectedRole, setSelectedRole] = useState("");
+  const [warning, setWarning] = useState("");
+
+  // ---------- Utility ----------
+  const isTimeOverlap = (start1, end1, start2, end2) => {
+    return new Date(start1) < new Date(end2) && new Date(start2) < new Date(end1);
+  };
+
+  const getDurationHours = (startDate, startTime, endDate, endTime) => {
+    const start = new Date(`${startDate}T${startTime}`);
+    const end = new Date(`${endDate}T${endTime}`);
+    const hours = (end - start) / (1000 * 60 * 60);
+    return Math.max(hours, 0).toFixed(1);
+  };
+
+  const getAppForEvent = (id) => applications.find((a) => a.eventId === id);
+
+  // ---------- Apply ----------
+  const handleApplyClick = (event) => {
+    const conflict = applications.find((a) => {
+      const ev = upcomingEvents.find((e) => e.id === a.eventId);
+      if (!ev) return false;
+      const evStart = new Date(`${ev.startDate}T${ev.startTime}`);
+      const evEnd = new Date(`${ev.endDate}T${ev.endTime}`);
+      const newStart = new Date(`${event.startDate}T${event.startTime}`);
+      const newEnd = new Date(`${event.endDate}T${event.endTime}`);
+      return isTimeOverlap(evStart, evEnd, newStart, newEnd);
+    });
+
+    if (conflict) {
+      setWarning("⚠️ You already have another event scheduled at this time!");
+      return;
+    }
+
+    setSelectedEvent(event);
+    setSelectedRole("");
+    setShowModal(true);
+  };
+
+  // ---------- Confirm Apply ----------
+  const handleConfirmApply = () => {
+    if (!selectedRole) {
+      setWarning("⚠️ Please select a role before applying!");
+      return;
+    }
+
+    const rateData = roleRates[selectedRole];
+    const duration = getDurationHours(
+      selectedEvent.startDate,
+      selectedEvent.startTime,
+      selectedEvent.endDate,
+      selectedEvent.endTime
+    );
+
+    let totalPay = 0;
+    if (rateData.type === "per hour") {
+      totalPay = rateData.rate * duration;
+    } else {
+      totalPay = rateData.rate;
+    }
+
+    setApplications([
+      ...applications,
+      {
+        eventId: selectedEvent.id,
+        role: selectedRole,
+        status: "Pending",
+        totalPay: totalPay.toFixed(2),
+      },
+    ]);
+
+    setShowModal(false);
+    setWarning("");
+  };
+
+  // ---------- Cancel ----------
+  const handleCancelApplication = (eventId) => {
+    setApplications(applications.filter((a) => a.eventId !== eventId));
+  };
+
+  
+// ---------- Styles ----------
+const pageContainer = {
+  fontFamily: "Inter, Arial, sans-serif",
+  padding: "20px",
+  background: "#f4f6f8",
+  minHeight: "100vh",
+};
+const title = { color: "#000", marginBottom: "20px" };
+const warningBox = {
+  background: "#fff3cd",
+  color: "#856404",
+  padding: "10px 15px",
+  borderRadius: "8px",
+  marginBottom: "15px",
+  border: "1px solid #ffeeba",
+};
+const table = {
+  width: "100%",
+  borderCollapse: "collapse",
+  background: "#fff",
+  borderRadius: "10px",
+  overflow: "hidden",
+};
+const thead = { background: "#212529", color: "#fff" };
+const th = { padding: "10px", textAlign: "left" };
+const td = { padding: "10px", borderBottom: "1px solid #ddd", color: "#000" };
+const applyBtn = {
+  padding: "6px 12px",
+  borderRadius: "6px",
+  border: "none",
+  background: "#007bff",
+  color: "#fff",
+  cursor: "pointer",
+};
+const cancelBtn = {
+  padding: "6px 12px",
+  borderRadius: "6px",
+  border: "none",
+  background: "#dc3545",
+  color: "#fff",
+  cursor: "pointer",
+};
+const confirmBtn = {
+  padding: "6px 12px",
+  background: "#28a745",
+  color: "#fff",
+  borderRadius: "6px",
+  border: "none",
+};
+const cancelBtnGray = {
+  padding: "6px 12px",
+  background: "#6c757d",
+  color: "#fff",
+  borderRadius: "6px",
+  border: "none",
+};
+const selectStyle = {
+  width: "100%",
+  padding: "8px",
+  marginBottom: "10px",
+  borderRadius: "6px",
+  border: "1px solid #ccc",
+};
+const modalOverlay = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  width: "100%",
+  height: "100%",
+  background: "rgba(0,0,0,0.5)",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  zIndex: 999,
+};
+const modalBox = {
+  background: "#fff",
+  padding: "20px",
+  borderRadius: "10px",
+  width: "340px",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+};
+
+
+
+   const tdStyleAE = {
+    padding: "8px",
+    borderBottom: "1px solid #ddd",
+    textAlign: "center",
+  };
+
+  const [upcomingEventsAE] = useState([
+    {
+      name: "Wedding Party",
+      startDate: "2025-11-01",
+      startTime: "10:00",
+      endDate: "2025-11-02",
+      endTime: "22:00",
+      location: "Sunshine Banquet Hall",
+      staff: { waiter: 4, driver: 2 },
+      budget: { waiter: 200, driver: 250 },
+    },
+    {
+      name: "Corporate Lunch",
+      startDate: "2025-11-05",
+      startTime: "12:00",
+      endDate: "2025-11-05",
+      endTime: "16:00",
+      location: "Skyline Tower",
+      staff: { server: 3, cleaner: 1 },
+      budget: { server: 150, cleaner: 100 },
+    },
+    {
+      name: "Birthday Bash",
+      startDate: "2025-11-01",
+      startTime: "12:00",
+      endDate: "2025-11-01",
+      endTime: "20:00",
+      location: "Dreamland Resort",
+      staff: { waiter: 3, decorator: 1, dj: 1, anchor: 1 },
+      budget: { waiter: 180, decorator: 220, dj: 500, anchor: 400 },
+    },
+    {
+      name: "Engagement Event",
+      startDate: "2025-11-10",
+      startTime: "14:00",
+      endDate: "2025-11-10",
+      endTime: "22:00",
+      location: "Royal Heritage Lawn",
+      staff: { chef: 2, cleaner: 1 },
+      budget: { chef: 300, cleaner: 100 },
+    },
+    {
+      name: "Music Concert",
+      startDate: "2025-11-15",
+      startTime: "17:00",
+      endDate: "2025-11-15",
+      endTime: "23:00",
+      location: "City Arena",
+      staff: { driver: 2, waiter: 2 },
+      budget: { driver: 200, waiter: 150 },
+    },
+  ]);
+
+  const [appliedEventsListAE, setAppliedEventsListAE] = useState([
+    {
+      name: "Wedding Party",
+      selectedRole: "waiter",
+      status: "Applied (Pending Approval)",
+      startDate: "2025-11-01",
+      startTime: "10:00",
+      endDate: "2025-11-02",
+      endTime: "22:00",
+    },
+    {
+      name: "Corporate Lunch",
+      selectedRole: "server",
+      status: "Approved",
+      startDate: "2025-11-05",
+      startTime: "12:00",
+      endDate: "2025-11-05",
+      endTime: "16:00",
+    },
+    {
+      name: "Birthday Bash",
+      selectedRole: "decorator",
+      status: "Rejected",
+      startDate: "2025-11-01",
+      startTime: "12:00",
+      endDate: "2025-11-01",
+      endTime: "20:00",
+    },
+    {
+      name: "Engagement Event",
+      selectedRole: "chef",
+      status: "Cancelled",
+      startDate: "2025-11-10",
+      startTime: "14:00",
+      endDate: "2025-11-10",
+      endTime: "22:00",
+    },
+  ]);
+
+  const [reapplyMode, setReapplyMode] = useState(null);
+
+  // ---------- APPLY / REAPPLY ----------
+  const handleApplyAE = (eventName, selectedRole, isReapply = false) => {
+    if (!selectedRole) {
+      alert("⚠️ Please select a role before applying!");
+      return;
+    }
+
+    const selectedEvent = upcomingEvents.find((e) => e.name === eventName);
+    const eventStart = new Date(`${selectedEvent.startDate} ${selectedEvent.startTime}`);
+    const eventEnd = new Date(`${selectedEvent.endDate} ${selectedEvent.endTime}`);
+
+    // Check overlap with other active events (Approved or Pending)
+    const overlapping = appliedEventsList.find((a) => {
+      if (["Cancelled", "Rejected"].includes(a.status)) return false;
+      const prev = upcomingEvents.find((e) => e.name === a.name);
+      if (!prev) return false;
+      const prevStart = new Date(`${prev.startDate} ${prev.startTime}`);
+      const prevEnd = new Date(`${prev.endDate} ${prev.endTime}`);
+      return eventStart < prevEnd && eventEnd > prevStart;
+    });
+
+    if (overlapping) {
+      alert("⚠️ You already have another event scheduled at this time!");
+      // ❌ Keep previous Rejected data unchanged (don’t update)
+      setReapplyMode(null);
+      return;
+    }
+
+    if (isReapply) {
+      setAppliedEventsList((prev) =>
+        prev.map((e) =>
+          e.name === eventName
+            ? {
+                ...e,
+                status: "Applied (Pending Approval)",
+                selectedRole,
+              }
+            : e
+        )
+      );
+      setReapplyMode(null);
+      alert(`✅ Reapplied successfully for "${eventName}" as ${selectedRole}`);
+    } else {
+      const alreadyApplied = appliedEventsList.find((e) => e.name === eventName);
+      if (alreadyApplied) {
+        alert("❌ You’ve already applied for this event!");
+        return;
+      }
+
+      const newApplication = {
+        name: eventName,
+        selectedRole,
+        status: "Applied (Pending Approval)",
+        startDate: selectedEvent.startDate,
+        startTime: selectedEvent.startTime,
+        endDate: selectedEvent.endDate,
+        endTime: selectedEvent.endTime,
+      };
+      setAppliedEventsList((prev) => [...prev, newApplication]);
+      alert(`✅ Applied for "${eventName}" as ${selectedRole}`);
+    }
+  };
+
+  // ---------- CANCEL ----------
+  const handleCancel = (eventName) => {
+    if (window.confirm("Are you sure you want to cancel this application?")) {
+      setAppliedEventsList((prev) =>
+        prev.map((e) =>
+          e.name === eventName ? { ...e, status: "Cancelled" } : e
+        )
+      );
+      alert("🕓 Application cancelled successfully.");
+    }
+  };
+
+  const handleReapplyClick = (eventName) => {
+    setReapplyMode(eventName);
+  };
+
+  // ---------- TABLE ----------
+  const TableAE = ({ columns, data, renderRow }) => (
+    <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 20 }}>
+      <thead>
+       <tr style={{ background: "#000", color: "#fff" }}>
+          {columns.map((col, i) => (
+            <th key={i} style={{ ...tdStyle, fontWeight: "bold" }}>
+              {col}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>{data.map(renderRow)}</tbody>
+    </table>
+  );
 
  // 🧾 Event History Data
 const eventHistory = [
@@ -181,8 +581,6 @@ const totalEarnings = eventHistory
 console.log("Total Earnings:", totalEarnings);
 
 
-
-
    useEffect(() => {
       const generated = Array.from({ length: bubbleCount }).map(() => ({
         size: Math.floor(Math.random() * 60) + 20,
@@ -195,12 +593,7 @@ console.log("Total Earnings:", totalEarnings);
     }, [bubbleCount]);
   
 
-  const notifications = [
-    "Alice applied for Wedding Reception",
-    "Bob applied for Corporate Dinner",
-    "Charlie rated your work",
-  ];
-
+ 
   const menuItems = [
     { name: "Dashboard", icon: "🏠" },
     { name: "Upcoming Events", icon: "⏳" },
@@ -256,10 +649,9 @@ console.log("Total Earnings:", totalEarnings);
   
 
   return (
-
-     <div style={{
+ <div style={{
       display: "flex", height: "100vh", fontFamily: "Arial,sans-serif", position: "relative", overflow: "hidden",
-      background: "linear-gradient(120deg, #1e90ff, #00b894, #6c5ce7)", backgroundSize: "600% 600%"
+     background: "rgba(255, 255, 255, 0.9)", backgroundSize: "600% 600%"
     }}>
 
       {/* ---- Bubble/Color Effect ---- */}
@@ -324,57 +716,217 @@ console.log("Total Earnings:", totalEarnings);
 
       <div style={{ flex: 1, padding: 20, overflowY: "auto" }}>
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h2 style={{ margin: 0 }}>Dashboard</h2>
-          <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
-            <div style={{ background: "#fef3c7", color: "#b45309", padding: "6px 12px", borderRadius: 20, fontWeight: "bold", fontSize: 14 }}>
-              ⭐ / 5
-            </div>
-            <div style={{ cursor: "pointer" }}>🔔 {notifications.length}</div>
-            <div
-              style={{ cursor: "pointer" }}
-              onClick={() => setActiveTab("Profile")}
-            >
-              {profile.profilePic ? (
-                <img
-                  src={
-                    typeof profile.profilePic === "string"
-                      ? profile.profilePic
-                      : URL.createObjectURL(profile.profilePic)
-                  }
-                  alt="Profile"
-                  style={{
-                    width: 40,       // make it slightly bigger if needed
-                    height: 40,
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                  }}
-                />
-              ) : (
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
-                    background: "#ccc",
-                  }}
-                />
-              )}
-            </div>
+  <div
+  style={{
+    position: "relative",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "15px 20px",
+    background: "#f3f4f6",
+    borderRadius: "12px",
+    marginBottom: 25,
+    boxShadow: "0 3px 8px rgba(0,0,0,0.05)",
+  }}
+>
+  {/* Left side */}
+  <h2 style={{ margin: 0, color: "#111827", fontWeight: "700" }}>
+    Dashboard
+  </h2>
 
-             <button
-            onClick={() => {
-              localStorage.removeItem("organiserToken");
-              localStorage.removeItem("staffToken");
-              localStorage.removeItem("token");
-              window.location.href = "/";
+  {/* Right side */}
+  <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+    {/* ⭐ Rating */}
+    <div
+      style={{
+        background: "#fef3c7",
+        color: "#b45309",
+        padding: "6px 14px",
+        borderRadius: 20,
+        fontWeight: "bold",
+        fontSize: 14,
+        boxShadow: "inset 0 1px 2px rgba(0,0,0,0.05)",
+      }}
+    >
+      ⭐ {avgRating} / 5
+    </div>
+
+    {/* 🔔 Notifications */}
+    <div
+      style={{ cursor: "pointer", position: "relative" }}
+      onClick={() => {
+        setShowNotifications(!showNotifications);
+        setShowProfilePreview(false);
+      }}
+    >
+      <span style={{ fontSize: 20 }}>🔔</span>
+      <span
+        style={{
+          position: "absolute",
+          top: "-5px",
+          right: "-8px",
+          background: "#ef4444",
+          color: "#fff",
+          borderRadius: "50%",
+          padding: "2px 6px",
+          fontSize: 11,
+          fontWeight: "bold",
+        }}
+      >
+        {notifications.length}
+      </span>
+
+      {showNotifications && (
+        <div
+          style={{
+            position: "absolute",
+            top: "35px",
+            right: 0,
+            width: "280px",
+            background: "#fff",
+            border: "1px solid #ddd",
+            borderRadius: 10,
+            boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
+            zIndex: 20,
+          }}
+        >
+          <div
+            style={{
+              padding: "10px",
+              fontWeight: "bold",
+              borderBottom: "1px solid #eee",
+              background: "#f9fafb",
+              borderTopLeftRadius: 10,
+              borderTopRightRadius: 10,
             }}
-            style={{ background: "#374151", color: "#fff", border: "none", padding: "8px 12px", borderRadius: 5, cursor: "pointer", fontWeight: "bold" }}
           >
-            Logout
-          </button>
+            Notifications
           </div>
+          {notifications.length > 0 ? (
+            notifications.map((note, idx) => (
+              <div
+                key={idx}
+                style={{
+                  padding: "10px",
+                  borderBottom:
+                    idx !== notifications.length - 1
+                      ? "1px solid #f1f1f1"
+                      : "none",
+                  fontSize: "14px",
+                  color: "#333",
+                }}
+              >
+                {note}
+              </div>
+            ))
+          ) : (
+            <div style={{ padding: "10px", color: "#999" }}>
+              No new notifications
+            </div>
+          )}
         </div>
+      )}
+    </div>
+
+    {/* 👤 Profile Picture */}
+    <div
+      style={{ cursor: "pointer", position: "relative" }}
+      onClick={() => {
+        setShowProfilePreview(!showProfilePreview);
+        setShowNotifications(false);
+      }}
+    >
+      <img
+        src={
+          profilee?.profilePic ||
+          "https://images.unsplash.com/photo-1653930351140-d8dca047455e?ixlib=rb-4.1.0&auto=format&fit=crop&q=60&w=500"
+        }
+        alt="Profile"
+        style={{
+          width: 45,
+          height: 45,
+          borderRadius: "50%",
+          objectFit: "cover",
+          border: "2px solid #d1d5db",
+          boxShadow: "0 0 4px rgba(0,0,0,0.1)",
+        }}
+      />
+    </div>
+
+    {/* Logout Button */}
+    <button
+      onClick={() => {
+        localStorage.removeItem("organiserToken");
+        localStorage.removeItem("staffToken");
+        localStorage.removeItem("token");
+        window.location.href = "/";
+      }}
+      style={{
+        background: "#111827",
+        color: "#fff",
+        border: "none",
+        padding: "8px 14px",
+        borderRadius: 6,
+        cursor: "pointer",
+        fontWeight: "600",
+        transition: "background 0.3s",
+      }}
+      onMouseOver={(e) => (e.target.style.background = "#1f2937")}
+      onMouseOut={(e) => (e.target.style.background = "#111827")}
+    >
+      Logout
+    </button>
+  </div>
+
+  {/* Fullscreen Profile Preview */}
+  {showProfilePreview && (
+    <div
+      onClick={() => setShowProfilePreview(false)}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        background: "rgba(0,0,0,0.5)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 100,
+        cursor: "pointer",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#fff",
+          borderRadius: 12,
+          padding: 20,
+          textAlign: "center",
+          boxShadow: "0 6px 25px rgba(0,0,0,0.3)",
+          width: "360px",
+          cursor: "default",
+        }}
+      >
+        <img
+          src={
+            profilee?.profilePic ||
+            "https://images.unsplash.com/photo-1653930351140-d8dca047455e?ixlib=rb-4.1.0&auto=format&fit=crop&q=60&w=500"
+          }
+          alt="Profile Preview"
+          style={{
+            width: "100%",
+            height: "auto",
+            borderRadius: 12,
+            marginBottom: 10,
+          }}
+        />
+      </div>
+    </div>
+  )}
+</div>
+
+
 
         {activeTab === "Dashboard" && (
           <>
@@ -416,101 +968,315 @@ console.log("Total Earnings:", totalEarnings);
 
 
         {/* Tabs */}
-        {activeTab === "Upcoming Events" && (
-          <div>
-            <h3>Upcoming Events</h3>
-            <Table
-              columns={["Event", "Start Date", "Start Time", "End Date", "End Time", "Location", "Priority", "Staff", "Budget", "Payment Mode", "Attachments", "Status", "Action"]}
-              data={upcomingEvents}
-              renderRow={(event, i) => {
-                const alreadyApplied = appliedEventsList.some(e => e.name === event.name);
-                return (
-                  <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#f9fafb", color: "#000" }}>
-                    <td style={tdStyle}>{event.name}</td>
-                    <td style={tdStyle}>{event.startDate}</td>
-                    <td style={tdStyle}>{event.startTime}</td>
-                    <td style={tdStyle}>{event.endDate}</td>
-                    <td style={tdStyle}>{event.endTime}</td>
-                    <td style={tdStyle}>{event.location}</td>
-                    <td style={tdStyle}>{event.priority}</td>
-                    <td style={tdStyle}>
-                      {Object.entries(event.staff).map(([role, count]) => <div key={role}>{role}: {count}</div>)}
-                    </td>
-                    <td style={tdStyle}>${event.budget}</td>
-                    <td style={tdStyle}>{event.paymentMode}</td>
-                    <td style={tdStyle}>
-                      {event.attachments.map((file, idx) => <div key={idx}>{file}</div>)}
-                    </td>
-                    <td style={tdStyle}>{event.status}</td>
-                    <td style={tdStyle}>
-                      {event.status === "Open" && (
-                        <button
-                          disabled={alreadyApplied}
-                          style={{
-                            padding: "5px 10px",
-                            background: alreadyApplied ? "gray" : "#3b82f6",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: 4,
-                            cursor: alreadyApplied ? "not-allowed" : "pointer",
-                          }}
-                          onClick={() => handleApply(event.name)}
-                        >
-                          {alreadyApplied ? "Applied" : "Apply"}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              }}
-            />
+     {activeTab === "Upcoming Events" && (
+ <div style={pageContainer}>
+      <h2 style={title}>Upcoming Events</h2>
+
+      {warning && <div style={warningBox}>{warning}</div>}
+
+      <table style={table}>
+        <thead style={thead}>
+          <tr>
+            {["Event", "Start", "End", "Location", "Staff & Rates", "Your Application", "Action"].map(
+              (col) => (
+                <th key={col} style={th}>
+                  {col}
+                </th>
+              )
+            )}
+          </tr>
+        </thead>
+
+        <tbody>
+          {upcomingEvents.map((event, i) => {
+            const app = getAppForEvent(event.id);
+
+            return (
+              <tr key={event.id} style={{ background: i % 2 ? "#fafafa" : "#fff" }}>
+                <td style={td}>{event.name}</td>
+                <td style={td}>{event.startDate} {event.startTime}</td>
+                <td style={td}>{event.endDate} {event.endTime}</td>
+                <td style={td}>{event.location}</td>
+
+                <td style={td}>
+                  {Object.entries(event.staff).map(([role, count]) => (
+                    <div key={role}>
+                      <b>{role}</b> ({count}) — 💰 ${roleRates[role]?.rate}{" "}
+                      <small>({roleRates[role]?.type})</small>
+                    </div>
+                  ))}
+                </td>
+
+                <td style={td}>
+                  {app ? (
+                    <div>
+                      ✅ Applied as <b>{app.role}</b> <br />
+                      💵 <b>${app.totalPay}</b> ({roleRates[app.role].type})
+                    </div>
+                  ) : (
+                    <span style={{ color: "#999" }}>Not Applied</span>
+                  )}
+                </td>
+
+                <td style={td}>
+                  {!app ? (
+                    <button onClick={() => handleApplyClick(event)} style={applyBtn}>
+                      Apply
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleCancelApplication(event.id)}
+                      style={cancelBtn}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {/* Role Selection Modal */}
+      {showModal && selectedEvent && (
+        <div style={modalOverlay}>
+          <div style={modalBox}>
+            <h3>Apply for: {selectedEvent.name}</h3>
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              style={selectStyle}
+            >
+              <option value="">-- Select Role --</option>
+              {Object.keys(selectedEvent.staff).map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+
+            {selectedRole && (
+              <div style={{ marginBottom: 15, color: "#333" }}>
+                💰 <b>Rate:</b> ${roleRates[selectedRole].rate} (
+                {roleRates[selectedRole].type}) <br />
+                {roleRates[selectedRole].type === "per hour" && (
+                  <>
+                    ⏱ <b>Duration:</b>{" "}
+                    {getDurationHours(
+                      selectedEvent.startDate,
+                      selectedEvent.startTime,
+                      selectedEvent.endDate,
+                      selectedEvent.endTime
+                    )}{" "}
+                    hrs <br />
+                    💵 <b>Total Pay:</b> $
+                    {(
+                      roleRates[selectedRole].rate *
+                      getDurationHours(
+                        selectedEvent.startDate,
+                        selectedEvent.startTime,
+                        selectedEvent.endDate,
+                        selectedEvent.endTime
+                      )
+                    ).toFixed(2)}
+                  </>
+                )}
+              </div>
+            )}
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button onClick={() => setShowModal(false)} style={cancelBtnGray}>
+                Close
+              </button>
+              <button onClick={handleConfirmApply} style={confirmBtn}>
+                Apply
+              </button>
+            </div>
           </div>
+        </div>
+      )}
+    </div>
         )}
 
         {activeTab === "Applied Events" && (
           <>
-            <h3>Applied Events</h3>
-            <Table
-              columns={["Event Name", "Start", "End", "Location", "Staff", "Budget",  "Status"]}
-              data={appliedEventsList.map(applied => {
-                // Find the corresponding event details
-                const event = upcomingEvents.find(e => e.name === applied.name);
+            
+      <h3 style={{ textAlign: "left", marginBottom: 10, color: "#222" }}>
+        Staff Event Application
+      </h3>
 
-                return {
-                  ...applied,
-                  startDate: event?.startDate || "",
-                  startTime: event?.startTime || "",
-                  endDate: event?.endDate || "",
-                  endTime: event?.endTime || "",
-                  location: event?.location || "",
-                  staff: event?.staff || {},
-                  budget: event?.budget || "",
-                  status: applied.status || "Pending",
-                };
-              })}
-              renderRow={(applied, i) => (
-                <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#f9fafb", color: "#000" }}>
-                  <td style={tdStyle}>{applied.name}</td>
-                  <td style={tdStyle}>{applied.startDate} {applied.startTime}</td>
-                  <td style={tdStyle}>{applied.endDate} {applied.endTime}</td>
-                  <td style={tdStyle}>{applied.location}</td>
-                  <td style={tdStyle}>
-                    {Object.entries(applied.staff).length
-                      ? Object.entries(applied.staff).map(([role, count]) => <div key={role}>{role}: {count}</div>)
-                      : "-"}
-                  </td>
-                  <td style={tdStyle}>${applied.budget}</td>
-                  <td style={tdStyle}>{applied.status}</td>
-                </tr>
-              )}
-            />
+      <TableAE
+        columns={[
+          "Event Name",
+          "Start Date & Time",
+          "End Date & Time",
+          "Location",
+          "Select Role",
+          "Budget",
+          "Status",
+          "Action",
+        ]}
+        data={upcomingEventsAE.map((event) => {
+          const applied = appliedEventsListAE.find((a) => a.name === event.name);
+          return {
+            ...event,
+            selectedRole: applied?.selectedRole || "",
+            status: applied?.status || "Not Applied",
+          };
+        })}
+        renderRow={(event, i) => {
+          const applied = appliedEventsListAE.find((a) => a.name === event.name);
+          const isReapply = reapplyMode === event.name;
+
+          const availableRoles =
+            applied?.status === "Rejected"
+              ? Object.keys(event.staff).filter((r) => r !== applied.selectedRole)
+              : Object.keys(event.staff);
+
+          return (
+            <tr
+              key={i}
+              style={{
+                background: i % 2 === 0 ? "#fff" : "#f9fafb",
+                color: "#000",
+              }}
+            >
+              <td style={tdStyleAE}>{event.name}</td>
+              <td style={tdStyleAE}>
+                {event.startDate} {event.startTime}
+              </td>
+              <td style={tdStyleAE}>
+                {event.endDate} {event.endTime}
+              </td>
+              <td style={tdStyleAE}>{event.location}</td>
+
+              {/* ROLE */}
+              <td style={tdStyleAE}>
+                {isReapply ? (
+                  <select
+                    defaultValue=""
+                    onChange={(e) => handleApply(event.name, e.target.value, true)}
+                    style={{
+                      padding: "6px",
+                      borderRadius: "6px",
+                      border: "1px solid #ccc",
+                      background: "#fff",
+                    }}
+                  >
+                    <option value="">-- Select Role --</option>
+                    {availableRoles.map((role) => (
+                      <option key={role} value={role}>
+                        {role}
+                      </option>
+                    ))}
+                  </select>
+                ) : applied ? (
+                  applied.selectedRole
+                ) : (
+                  <select
+                    defaultValue=""
+                    onChange={(e) => handleApplyAE(event.name, e.target.value, false)}
+                    style={{
+                      padding: "6px",
+                      borderRadius: "6px",
+                      border: "1px solid #ccc",
+                      background: "#fff",
+                    }}
+                  >
+                    <option value="">-- Select Role --</option>
+                    {availableRoles.map((role) => (
+                      <option key={role} value={role}>
+                        {role}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </td>
+
+              {/* BUDGET DISPLAY FIX */}
+              <td style={tdStyle}>
+                {applied ? (
+                  event.budget?.[applied.selectedRole] ? (
+                    applied.selectedRole === "dj" || applied.selectedRole === "anchor" ? (
+                      `$${event.budget[applied.selectedRole]} /event`
+                    ) : (
+                      `$${event.budget[applied.selectedRole]} /hr`
+                    )
+                  ) : (
+                    "-"
+                  )
+                ) : (
+                  "-"
+                )}
+              </td>
+
+              {/* STATUS */}
+              <td style={tdStyleAE}>
+                <span
+                  style={{
+                    color:
+                      applied?.status === "Approved"
+                        ? "green"
+                        : applied?.status === "Rejected"
+                        ? "red"
+                        : applied?.status === "Cancelled"
+                        ? "gray"
+                        : applied?.status?.includes("Pending")
+                        ? "orange"
+                        : "black",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {applied?.status || "Not Applied"}
+                </span>
+              </td>
+
+              {/* ACTIONS */}
+              <td style={tdStyleAE}>
+                {applied?.status === "Applied (Pending Approval)" && (
+                  <button
+                    onClick={() => handleCancel(event.name)}
+                    style={{
+                      background: "#ff4d4d",
+                      color: "#fff",
+                      border: "none",
+                      padding: "5px 10px",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                )}
+
+                {(applied?.status === "Rejected" || applied?.status === "Cancelled") &&
+                  !isReapply && (
+                    <button
+                      onClick={() => handleReapplyClick(event.name)}
+                      style={{
+                        background: "#007bff",
+                        color: "#fff",
+                        border: "none",
+                        padding: "5px 10px",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Reapply
+                    </button>
+                  )}
+              </td>
+            </tr>
+          );
+        }}
+      />
           </>
         )}
 
-
         {activeTab === "Event History" && (
           <>
-            <h3>Event History</h3>
+            <h3 style={{ textAlign: "left", marginBottom: 10, color: "#222" }}>Event History</h3>
             <Table
               columns={["Event Name", "Start", "End", "Location", "Worked Roles", "Budget", "Payment Mode", "Organiser Review", "Status"]}
               data={eventHistory}
@@ -534,12 +1300,22 @@ console.log("Total Earnings:", totalEarnings);
   {activeTab === "Payments" && (
   <div>
     {/* 💰 Dynamic Total Earnings (only paid events) */}
-    <h3>
-      Total Earnings: $
-      {eventHistory
-        .filter((e) => e.paymentReceived)
-        .reduce((sum, e) => sum + (e.budget || 0), 0)}
-    </h3>
+   <h3
+  style={{
+    textAlign: "left",
+    marginBottom: 10,
+    color: "#222",
+    fontSize: "20px",
+    fontWeight: "600",
+    letterSpacing: "0.5px",
+  }}
+>
+  Total Earnings: $
+  {eventHistory
+    .filter((e) => e.paymentReceived)
+    .reduce((sum, e) => sum + (e.budget || 0), 0)}
+</h3>
+
 
     <Table
       columns={[
@@ -642,7 +1418,17 @@ console.log("Total Earnings:", totalEarnings);
 
       
         {activeTab === "Profile" && (
-          <div style={{ background: "#fff", padding: 20, borderRadius: 5, color: "#000" }}>
+           <div
+            style={{
+              width: "100%",
+              margin: "0",
+              padding: 20,
+              background: "#f9fafb",
+              borderRadius: 8,
+              minHeight: "100vh",
+              color: "#000",
+            }}
+          >
             <h3>Profile</h3>
 
             {/* Profile Picture */}

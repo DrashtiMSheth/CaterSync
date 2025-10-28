@@ -324,7 +324,7 @@ const ProgressBar = ({ assigned, required }) => {
     { id: 9, type: "warning", message: "Charlie tried to apply twice for Event B", status: "warning", createdAt: Date.now() - 1000 * 60 * 5 },
   ]);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showProfilePreview, setShowProfilePreview] = useState(false);
+  // const [showProfilePreview, setShowProfilePreview] = useState(false);
   // const [searchQuery, setSearchQuery] = useState("");
   const [staffRatings, setStaffRatings] = useState([]);
   const [staffSearch, setStaffSearch] = useState("");
@@ -844,6 +844,17 @@ const handleSave = () => {
   const selectedStaff = staffRecords.find(s => s.staffId === selectedStaffId);
   const selectedEvents = selectedStaffId ? staffEventRecords[selectedStaffId] : [];
 
+  const [showProfilePreview, setShowProfilePreview] = useState(false);
+
+  const formm = {
+    companyLogo: null, // Example: you can set an uploaded file here
+  };
+
+  const profileImage =
+    form.companyLogo
+      ? URL.createObjectURL(form.companyLogo)
+      : "https://media.istockphoto.com/id/1191082076/photo/real-estate-designer-working-on-computer.jpg?s=612x612&w=0&k=20&c=JIwdczkVT71_C8Xrzo23fmpQ-3RQplSoNnZKEiyvYo4=";
+
 
   return (
     <div style={{
@@ -890,13 +901,54 @@ const handleSave = () => {
             <span style={{ fontSize: 18, cursor: "pointer" }} onClick={() => setShowDropdown(true)}>🔔</span>
             {notifications.length > 0 && <span style={{ position: "absolute", top: -5, right: -5, background: "red", color: "#fff", borderRadius: "50%", fontSize: "12px", padding: "2px 6px" }}>{notifications.length}</span>}
           </div>
-          <img
-            src={form.companyLogo ? URL.createObjectURL(form.companyLogo) : "https://i.pravatar.cc/150"}
-            alt="profile"
-            style={{ borderRadius: "50%", width: 80, height: 80, cursor: "pointer" }}
-            onClick={() => setShowProfilePreview(true)}
-          />
+            {/* Profile Image */}
+      <img
+        src={profileImage}
+        alt="profile"
+        style={{
+          borderRadius: "50%",
+          width: 80,
+          height: 80,
+          objectFit: "cover",
+          cursor: "pointer",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+          border: "2px solid #eee",
+        }}
+        onClick={() => setShowProfilePreview(true)}
+      />
 
+      {/* Fullscreen Image Preview */}
+      {showProfilePreview && (
+        <div
+          onClick={() => setShowProfilePreview(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.6)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 100,
+            cursor: "pointer",
+          }}
+        >
+          <img
+            src={profileImage}
+            alt="Profile Preview"
+            style={{
+              width: "60%",
+              maxWidth: 400,
+              borderRadius: 20,
+              objectFit: "cover",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+              transition: "transform 0.3s ease",
+            }}
+          />
+        </div>
+      )}
 
           <button
             onClick={() => {
