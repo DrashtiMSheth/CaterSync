@@ -11,7 +11,7 @@ const organiserSchema = new mongoose.Schema(
     businessType: { type: String, required: true },
     officeAddress: { type: String, default: "" },
     website: { type: String, default: "" },
-    logo: { type: String, default: "" }, 
+    companyLogo: { type: String, default: "" }, 
     role: { type: String, default: "organiser" },
     otp: { type: String, default: null }, 
     notifications: [

@@ -109,9 +109,9 @@ function StaffDetailModal({ staff, events, ratingMap, setRatingMap, onClose, onR
   const ratedEvents = events.filter(e => e.ratedByOrg || ratingMap[events.indexOf(e)]);
   const overallRating = ratedEvents.length
     ? Math.round(
-        ratedEvents.reduce((sum, e, idx) => sum + (e.ratedByOrg ? e.eventRate : ratingMap[idx] || 0), 0) 
-        / ratedEvents.length
-      )
+      ratedEvents.reduce((sum, e, idx) => sum + (e.ratedByOrg ? e.eventRate : ratingMap[idx] || 0), 0)
+      / ratedEvents.length
+    )
     : "Not Rated Yet";
 
   return (
@@ -211,25 +211,25 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
   //   { id: 2, name: "Event B", startDate: "2025-09-22", endDate: "2025-09-22", priority: "Medium", required: 5, applied: 5, lat: 19.08, lon: 72.84, staff: {}, specialReqs: [], attachments: [] },
   // ];
 
-//   const todayStr = new Date().toISOString().split("T")[0];
-//   // Styling
-// const thStyle = {
-//   padding: "12px",
-//   border: "1px solid #ccc",
-//   backgroundColor: "#f3f4f6",
-//   fontWeight: "bold",
-//   textAlign: "left",
-// };
+  //   const todayStr = new Date().toISOString().split("T")[0];
+  //   // Styling
+  // const thStyle = {
+  //   padding: "12px",
+  //   border: "1px solid #ccc",
+  //   backgroundColor: "#f3f4f6",
+  //   fontWeight: "bold",
+  //   textAlign: "left",
+  // };
 
-// const tdStyle = {
-//   padding: "12px",
-//   border: "1px solid #ccc",
-//   verticalAlign: "top",
-// };
+  // const tdStyle = {
+  //   padding: "12px",
+  //   border: "1px solid #ccc",
+  //   verticalAlign: "top",
+  // };
 
- // Styles
-const thStyle = { padding: "12px", border: "1px solid #ccc", background: "#f3f4f6", fontWeight: "bold", cursor: "pointer" };
-const tdStyle = { padding: "12px", border: "1px solid #ccc", verticalAlign: "top" };
+  // Styles
+  const thStyle = { padding: "12px", border: "1px solid #ccc", background: "#f3f4f6", fontWeight: "bold", cursor: "pointer" };
+  const tdStyle = { padding: "12px", border: "1px solid #ccc", verticalAlign: "top" };
 
   // Dummy past events data
   const pastEvents = [
@@ -277,33 +277,33 @@ const tdStyle = { padding: "12px", border: "1px solid #ccc", verticalAlign: "top
   };
 
   // Styles for CurrentUpcomingEvents component
-const currentEventsThStyle = { padding: "12px", border: "1px solid #ccc", background: "#f3f4f6", fontWeight: "bold" };
-const currentEventsTdStyle = { padding: "12px", border: "1px solid #ccc", verticalAlign: "top" };
-const currentEventsButtonStyle = (disabled = false) => ({
-  padding: "6px 12px",
-  border: "none",
-  borderRadius: "6px",
-  background: disabled ? "#ccc" : "#3b82f6",
-  color: disabled ? "#666" : "white",
-  cursor: disabled ? "not-allowed" : "pointer",
-});
+  const currentEventsThStyle = { padding: "12px", border: "1px solid #ccc", background: "#f3f4f6", fontWeight: "bold" };
+  const currentEventsTdStyle = { padding: "12px", border: "1px solid #ccc", verticalAlign: "top" };
+  const currentEventsButtonStyle = (disabled = false) => ({
+    padding: "6px 12px",
+    border: "none",
+    borderRadius: "6px",
+    background: disabled ? "#ccc" : "#3b82f6",
+    color: disabled ? "#666" : "white",
+    cursor: disabled ? "not-allowed" : "pointer",
+  });
 
-// Progress bar component
-const ProgressBar = ({ assigned, required }) => {
-  const percentage = required ? Math.min((assigned / required) * 100, 100) : 0;
-  let color = "#ef4444"; // red
-  if (percentage === 100) color = "#16a34a"; // green
-  else if (percentage > 0) color = "#facc15"; // yellow
+  // Progress bar component
+  const ProgressBar = ({ assigned, required }) => {
+    const percentage = required ? Math.min((assigned / required) * 100, 100) : 0;
+    let color = "#ef4444"; // red
+    if (percentage === 100) color = "#16a34a"; // green
+    else if (percentage > 0) color = "#facc15"; // yellow
 
-  return (
-    <div style={{ marginTop: 4 }}>
-      <div style={{ fontSize: 12 }}>{assigned}/{required}</div>
-      <div style={{ background: "#e5e7eb", borderRadius: 6, height: 12, width: "100%" }}>
-        <div style={{ width: `${percentage}%`, background: color, height: "100%", borderRadius: 6 }} />
+    return (
+      <div style={{ marginTop: 4 }}>
+        <div style={{ fontSize: 12 }}>{assigned}/{required}</div>
+        <div style={{ background: "#e5e7eb", borderRadius: 6, height: 12, width: "100%" }}>
+          <div style={{ width: `${percentage}%`, background: color, height: "100%", borderRadius: 6 }} />
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -334,7 +334,7 @@ const ProgressBar = ({ assigned, required }) => {
   const handleDeleteRating = (index) => {
     setStaffRatings(prev => prev.filter((_, i) => i !== index));
   };
-//  const [editingEvent, setEditingEvent] = useState(null);
+  //  const [editingEvent, setEditingEvent] = useState(null);
   const [applications, setApplications] = useState([]); // holds staff applications
   const [staff, setStaff] = useState([]); // fetched via API instead of static list
   // const [colorMode, setColorMode] = useState(false);
@@ -358,7 +358,7 @@ const ProgressBar = ({ assigned, required }) => {
     "Anchor": ["Bilingual", "Stage Experience", "Emcee", "Corporate", "Wedding", "Audience Engagement", "Event Flow Management", "Public Speaking"]
   };
 
-  
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -409,33 +409,33 @@ const ProgressBar = ({ assigned, required }) => {
   };
 
   const handleDJAnchorSelect = (role, gender) => {
-  setForm(prev => {
-    const current = prev.staff[role] || {};
-    const isSelected =
-      (gender === "male" && current.male === 1) ||
-      (gender === "female" && current.female === 1);
+    setForm(prev => {
+      const current = prev.staff[role] || {};
+      const isSelected =
+        (gender === "male" && current.male === 1) ||
+        (gender === "female" && current.female === 1);
 
-    // Toggle selection: deselect if already selected
-    const updatedStaff = {
-      ...prev.staff,
-      [role]: isSelected
-        ? { male: 0, female: 0 } // deselect
-        : { male: gender === "male" ? 1 : 0, female: gender === "female" ? 1 : 0 }, // select
-    };
+      // Toggle selection: deselect if already selected
+      const updatedStaff = {
+        ...prev.staff,
+        [role]: isSelected
+          ? { male: 0, female: 0 } // deselect
+          : { male: gender === "male" ? 1 : 0, female: gender === "female" ? 1 : 0 }, // select
+      };
 
-    // Remove specialReq if both male & female are 0
-    const male = updatedStaff[role].male || 0;
-    const female = updatedStaff[role].female || 0;
-    if (male === 0 && female === 0) {
-      delete updatedStaff[role].specialReq;
-      setActiveSpecialRole(null); // close popup when deselected
-    } else {
-      setActiveSpecialRole(role); // open popup when selected
-    }
+      // Remove specialReq if both male & female are 0
+      const male = updatedStaff[role].male || 0;
+      const female = updatedStaff[role].female || 0;
+      if (male === 0 && female === 0) {
+        delete updatedStaff[role].specialReq;
+        setActiveSpecialRole(null); // close popup when deselected
+      } else {
+        setActiveSpecialRole(role); // open popup when selected
+      }
 
-    return { ...prev, staff: updatedStaff };
-  });
-};
+      return { ...prev, staff: updatedStaff };
+    });
+  };
 
 
   const handleSubmit = () => {
@@ -661,7 +661,7 @@ const ProgressBar = ({ assigned, required }) => {
     }
   };
 
- 
+
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredEventss, setFilteredEventss] = useState(pastEvents); // ← assign dummy data
@@ -724,7 +724,7 @@ const ProgressBar = ({ assigned, required }) => {
   // Local datetime for <input type="datetime-local">
   const toLocalDateTime = (date) => {
     const tzOffset = date.getTimezoneOffset() * 60000;
-    return new Date(date - tzOffset).toISOString().slice(0,16);
+    return new Date(date - tzOffset).toISOString().slice(0, 16);
   };
 
   const calculateStaffBudget = (data) =>
@@ -784,13 +784,13 @@ const ProgressBar = ({ assigned, required }) => {
   ];
 
   const formatDateTimee = (dt) => dt?.replace("T", " ") || "-";
-const handleSave = () => {
-  setEvents(prev =>
-    prev.map(ev => ev.id === editingEvents.id ? editingEvents : ev)
-  );
-  setEditingEvents(null);
-  alert("✅ Event updated successfully!");
-};
+  const handleSave = () => {
+    setEvents(prev =>
+      prev.map(ev => ev.id === editingEvents.id ? editingEvents : ev)
+    );
+    setEditingEvents(null);
+    alert("✅ Event updated successfully!");
+  };
 
   const [staffRecords] = useState([
     { staffId: 1, staffName: "John Doe", staffEmail: "john@example.com", staffContact: "1234567890" },
@@ -855,6 +855,99 @@ const handleSave = () => {
       ? URL.createObjectURL(form.companyLogo)
       : "https://media.istockphoto.com/id/1191082076/photo/real-estate-designer-working-on-computer.jpg?s=612x612&w=0&k=20&c=JIwdczkVT71_C8Xrzo23fmpQ-3RQplSoNnZKEiyvYo4=";
 
+    const [forme, setForme] = useState({
+  fullName: "",
+  email: "",
+  phone: "",
+  password: "",
+  organiserName: "",
+  businessType: "",
+  officeAddress: "",
+  website: "",
+  companyLogo: null,
+});
+
+
+  const [preview, setPreview] = useState(null);
+
+  // ---------- Fetch organiser profile ----------
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("http://localhost:5050/api/organiser/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          setForme({
+            companyLogo:
+              data.organiser.companyLogo ||
+              "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+            fullName: data.organiser.fullName || "",
+            email: data.organiser.email || "",
+            phone: data.organiser.phone || "",
+            organiserName: data.organiser.organiserName || "",
+            businessType: data.organiser.businessType || "",
+            officeAddress: data.organiser.officeAddress || "",
+            website: data.organiser.website || "",
+          });
+        } else {
+          console.error("Failed to load profile:", data.message);
+        }
+      } catch (err) {
+        console.error("Error fetching organiser profile:", err);
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
+  // ---------- Handle input changes ----------
+  const handleChangee = (e) => {
+    const { name, value, files } = e.target;
+
+    if (name === "companyLogo") {
+      const file = files[0];
+      setForme((prev) => ({ ...prev, companyLogo: file }));
+      if (file) {
+        setPreview(URL.createObjectURL(file));
+      }
+    } else {
+      setForme((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  // ---------- Save organiser profile ----------
+  const handleProfileSave = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const formData = new FormData();
+      Object.entries(setForme).forEach(([key, value]) => {
+        formData.append(key, value);
+      });
+
+      const res = await fetch("http://localhost:5050/api/organiser/profile", {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert("Profile updated successfully!");
+        setForme(data.organiser);
+      } else {
+        alert("Failed to update profile");
+      }
+    } catch (err) {
+      console.error("Error updating organiser profile:", err);
+    }
+  };
 
   return (
     <div style={{
@@ -896,81 +989,199 @@ const handleSave = () => {
       {/* Main */}
       <div style={{ flex: 1, padding: 20, background: "rgba(255,255,255,0.9)", overflowY: "scroll", zIndex: 1, color: "#000" }}>
         {/* Top Bar */}
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, padding: "4px 8px", borderBottom: "1px solid #e5e7eb", background: "#fff", marginBottom: 10 }}>
-          <div style={{ position: "relative" }}>
-            <span style={{ fontSize: 18, cursor: "pointer" }} onClick={() => setShowDropdown(true)}>🔔</span>
-            {notifications.length > 0 && <span style={{ position: "absolute", top: -5, right: -5, background: "red", color: "#fff", borderRadius: "50%", fontSize: "12px", padding: "2px 6px" }}>{notifications.length}</span>}
-          </div>
-            {/* Profile Image */}
-      <img
-        src={profileImage}
-        alt="profile"
-        style={{
-          borderRadius: "50%",
-          width: 80,
-          height: 80,
-          objectFit: "cover",
-          cursor: "pointer",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-          border: "2px solid #eee",
-        }}
-        onClick={() => setShowProfilePreview(true)}
-      />
+       {/* ===== Dashboard Header ===== */}
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "8px 16px",
+    borderBottom: "1px solid #e5e7eb",
+    background: "#fff",
+    marginBottom: 10,
+  }}
+>
+  {/* Left Side — Dashboard Title */}
+  <h2
+    style={{
+      fontSize: "22px",
+      fontWeight: "600",
+      color: "#111827",
+      margin: 0,
+    }}
+  >
+    Dashboard
+  </h2>
 
-      {/* Fullscreen Image Preview */}
-      {showProfilePreview && (
-        <div
-          onClick={() => setShowProfilePreview(false)}
+  {/* Right Side — Notifications + Profile + Logout */}
+  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+    {/* Notification Icon */}
+    <div style={{ position: "relative" }}>
+      <span
+        style={{ fontSize: 20, cursor: "pointer" }}
+        onClick={() => setShowDropdown(true)}
+      >
+        🔔
+      </span>
+      {notifications.length > 0 && (
+        <span
           style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            background: "rgba(0,0,0,0.6)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 100,
-            cursor: "pointer",
+            position: "absolute",
+            top: -5,
+            right: -5,
+            background: "red",
+            color: "#fff",
+            borderRadius: "50%",
+            fontSize: "12px",
+            padding: "2px 6px",
           }}
         >
-          <img
-            src={profileImage}
-            alt="Profile Preview"
-            style={{
-              width: "60%",
-              maxWidth: 400,
-              borderRadius: 20,
-              objectFit: "cover",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-              transition: "transform 0.3s ease",
-            }}
-          />
-        </div>
+          {notifications.length}
+        </span>
       )}
+    </div>
 
-          <button
-            onClick={() => {
-              localStorage.removeItem("organiserToken");
-              localStorage.removeItem("staffToken");
-              localStorage.removeItem("token");
-              window.location.href = "/";
-            }}
-            style={{ background: "#374151", color: "#fff", border: "none", padding: "8px 12px", borderRadius: 5, cursor: "pointer", fontWeight: "bold" }}
-          >
-            Logout
-          </button>
-        </div>
+    {/* Profile Image */}
+    <img
+      src={profileImage}
+      alt="profile"
+      style={{
+        borderRadius: "50%",
+        width: 60,
+        height: 60,
+        objectFit: "cover",
+        cursor: "pointer",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+        border: "2px solid #eee",
+      }}
+      onClick={() => setShowProfilePreview(true)}
+    />
+
+    {/* Fullscreen Image Preview */}
+    {showProfilePreview && (
+      <div
+        onClick={() => setShowProfilePreview(false)}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          background: "rgba(0,0,0,0.6)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 100,
+          cursor: "pointer",
+        }}
+      >
+        <img
+          src={profileImage}
+          alt="Profile Preview"
+          style={{
+            width: "60%",
+            maxWidth: 400,
+            borderRadius: 20,
+            objectFit: "cover",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+            transition: "transform 0.3s ease",
+          }}
+        />
+      </div>
+    )}
+
+    {/* Logout Button */}
+    <button
+      onClick={() => {
+        localStorage.removeItem("organiserToken");
+        localStorage.removeItem("staffToken");
+        localStorage.removeItem("token");
+        window.location.href = "/";
+      }}
+      style={{
+        background: "#374151",
+        color: "#fff",
+        border: "none",
+        padding: "8px 12px",
+        borderRadius: 5,
+        cursor: "pointer",
+        fontWeight: "bold",
+      }}
+    >
+      Logout
+    </button>
+  </div>
+</div>
 
         {/* Dashboard Cards */}
         {activeTab === "Dashboard" && (
+
           <>
+            {/* <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        marginBottom: 20,
+        gap: "15px",
+      }}
+    >
+      {(() => {
+        const today = new Date();
+
+        // ✅ Fix counts:
+        const currentEvents = events.filter(
+          (e) =>
+            new Date(e.startDate) <= today &&
+            new Date(e.endDate || e.startDate) >= today
+        ).length;
+
+        const eventHistory = events.filter(
+          (e) => new Date(e.endDate || e.startDate) < today
+        ).length;
+
+        const staffCount = staff.length;
+
+        const cards = [
+          { title: "Current Events", count: currentEvents },
+          { title: "Event History", count: eventHistory },
+          { title: "Staff List", count: staffCount },
+        ];
+
+        return cards.map((card) => (
+          <div
+            key={card.title}
+            onClick={() => setActiveTab(card.title)}
+            style={{
+              flex: 1,
+              minWidth: "150px",
+              padding: "20px",
+              background: activeTab === card.title ? "#10b981" : "#fff",
+              borderRadius: 8,
+              textAlign: "center",
+              cursor: "pointer",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              height: 120,
+              color: activeTab === card.title ? "#fff" : "#000",
+              transition: "0.3s",
+            }}
+          >
+            <div style={{ fontSize: 30, fontWeight: "bold" }}>
+              {card.count}
+            </div>
+            <div style={{ fontSize: 16, marginTop: 10 }}>{card.title}</div>
+          </div>
+        ));
+      })()}
+    </div> */}
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20, gap: "15px" }}>
               {[
-                { title: "Current Events", count: events.filter((e) => new Date(e.startDate) <= new Date(today) && new Date(e.endDate || e.startDate) >= new Date(today)).length },
-                { title: "Event History", count: events.filter((e) => new Date(e.startDate) > new Date(today)).length },
-                { title: "Staff List", count: staff.length }
+                { title: "Current Events", count: 4 },
+                { title: "Event History", count: 2 },
+                { title: "Staff List", count: 3 }
               ].map((card) => (
                 <div
                   key={card.title}
@@ -1002,461 +1213,461 @@ const handleSave = () => {
           </>
         )}
 
-        {activeTab === "Current Events" && ( 
+        {activeTab === "Current Events" && (
           <div style={{ padding: 20 }}>
-      <h2>Current / Upcoming Events</h2>
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 700 }}>
-          <thead>
-            <tr>
-              <th style={currentEventsThStyle}>Name</th>
-              <th style={currentEventsThStyle}>Start</th>
-              <th style={currentEventsThStyle}>End</th>
-              <th style={currentEventsThStyle}>Location</th>
-              <th style={currentEventsThStyle}>Staff & Budget</th>
-              <th style={currentEventsThStyle}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedEventss.map((event) => {
-              const start = new Date(event.startDateTime);
-              const end = new Date(event.endDateTime);
-              const isCurrent = start <= now && end >= now;
-              const editable = !isCurrent && isEditable(event);
+            <h2>Current / Upcoming Events</h2>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 700 }}>
+                <thead>
+                  <tr>
+                    <th style={currentEventsThStyle}>Name</th>
+                    <th style={currentEventsThStyle}>Start</th>
+                    <th style={currentEventsThStyle}>End</th>
+                    <th style={currentEventsThStyle}>Location</th>
+                    <th style={currentEventsThStyle}>Staff & Budget</th>
+                    <th style={currentEventsThStyle}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedEventss.map((event) => {
+                    const start = new Date(event.startDateTime);
+                    const end = new Date(event.endDateTime);
+                    const isCurrent = start <= now && end >= now;
+                    const editable = !isCurrent && isEditable(event);
 
-              return (
-                <tr key={event.id} style={{ backgroundColor: isCurrent ? "#d1fae5" : "transparent" }}>
-                  <td style={currentEventsTdStyle}>{event.name}</td>
-                  <td style={currentEventsTdStyle}>{formatDateTimee(event.startDateTime)}</td>
-                  <td style={currentEventsTdStyle}>{formatDateTimee(event.endDateTime)}</td>
-                  <td style={currentEventsTdStyle}>{event.location}</td>
-                  <td style={currentEventsTdStyle}>
-                    {Object.entries(event.staff).map(([role, data]) => {
-                      const assigned = data.male + data.female;
-                      const required = data.required || assigned;
-                      return (
-                        <div key={role} style={{ marginBottom: 6 }}>
-                          <div>{role}: {assigned} assigned ({calculateStaffBudgett(data)}$)</div>
-                          <ProgressBar assigned={assigned} required={required} />
+                    return (
+                      <tr key={event.id} style={{ backgroundColor: isCurrent ? "#d1fae5" : "transparent" }}>
+                        <td style={currentEventsTdStyle}>{event.name}</td>
+                        <td style={currentEventsTdStyle}>{formatDateTimee(event.startDateTime)}</td>
+                        <td style={currentEventsTdStyle}>{formatDateTimee(event.endDateTime)}</td>
+                        <td style={currentEventsTdStyle}>{event.location}</td>
+                        <td style={currentEventsTdStyle}>
+                          {Object.entries(event.staff).map(([role, data]) => {
+                            const assigned = data.male + data.female;
+                            const required = data.required || assigned;
+                            return (
+                              <div key={role} style={{ marginBottom: 6 }}>
+                                <div>{role}: {assigned} assigned ({calculateStaffBudgett(data)}$)</div>
+                                <ProgressBar assigned={assigned} required={required} />
+                              </div>
+                            );
+                          })}
+                          {event.extraExpenses > 0 && <div>Extra: {event.extraExpenses}$</div>}
+                        </td>
+                        <td style={currentEventsTdStyle}>
+                          {editable && (
+                            <button style={currentEventsButtonStyle(false)} onClick={() => setEditingEvents(eventss)}>Edit</button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {editingEvents && (
+              <div
+                style={{
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  background: "rgba(0,0,0,0.5)",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  zIndex: 999,
+                }}
+              >
+                <div
+                  style={{
+                    background: "#fff",
+                    padding: "25px 30px",
+                    borderRadius: "10px",
+                    width: "480px",
+                    maxHeight: "90%",
+                    overflowY: "auto",
+                    boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
+                  }}
+                >
+                  <h3 style={{ marginBottom: 20, textAlign: "center", fontSize: "20px" }}>
+                    Edit Event
+                  </h3>
+
+                  {/* Event Fields */}
+                  <div style={{ marginBottom: 15 }}>
+                    <label style={{ fontWeight: 500 }}>Name:</label>
+                    <input
+                      type="text"
+                      value={editingEvents.name || ""}
+                      onChange={(e) =>
+                        setEditingEvents({ ...editingEvents, name: e.target.value })
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "5px",
+                        border: "1px solid #ccc",
+                        marginTop: 5,
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: 15 }}>
+                    <label style={{ fontWeight: 500 }}>Start:</label>
+                    <input
+                      type="datetime-local"
+                      value={editingEvents.startDateTime || ""}
+                      onChange={(e) =>
+                        setEditingEvents({
+                          ...editingEvents,
+                          startDateTime: e.target.value,
+                        })
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "5px",
+                        border: "1px solid #ccc",
+                        marginTop: 5,
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: 15 }}>
+                    <label style={{ fontWeight: 500 }}>End:</label>
+                    <input
+                      type="datetime-local"
+                      value={editingEvents.endDateTime || ""}
+                      onChange={(e) =>
+                        setEditingEvents({
+                          ...editingEvents,
+                          endDateTime: e.target.value,
+                        })
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "5px",
+                        border: "1px solid #ccc",
+                        marginTop: 5,
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: 15 }}>
+                    <label style={{ fontWeight: 500 }}>Location:</label>
+                    <input
+                      type="text"
+                      value={editingEvents.location || ""}
+                      onChange={(e) =>
+                        setEditingEvents({ ...editingEvents, location: e.target.value })
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "5px",
+                        border: "1px solid #ccc",
+                        marginTop: 5,
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: 25 }}>
+                    <label style={{ fontWeight: 500 }}>Extra Expenses:</label>
+                    <input
+                      type="number"
+                      value={editingEvents.extraExpenses || 0}
+                      onChange={(e) =>
+                        setEditingEvents({
+                          ...editingEvents,
+                          extraExpenses: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      style={{
+                        width: "100%",
+                        padding: "8px",
+                        borderRadius: "5px",
+                        border: "1px solid #ccc",
+                        marginTop: 5,
+                      }}
+                    />
+                  </div>
+
+                  {/* Staff Section */}
+                  {/* Staff Details */}
+                  <h4
+                    style={{
+                      marginTop: 10,
+                      marginBottom: 10,
+                      fontSize: "18px",
+                      borderBottom: "1px solid #ddd",
+                      paddingBottom: 6,
+                    }}
+                  >
+                    Staff Details
+                  </h4>
+
+                  {Object.entries(editingEvents?.staff || {}).map(([role, data]) => {
+                    const assigned = (data.male || 0) + (data.female || 0);
+                    const required = data.required || assigned;
+
+                    return (
+                      <div
+                        key={role}
+                        style={{
+                          border: "1px solid #ccc",
+                          borderRadius: "6px",
+                          padding: "12px",
+                          marginBottom: "15px",
+                          background: "#f9f9f9",
+                        }}
+                      >
+                        {/* Role */}
+                        <strong
+                          style={{
+                            display: "block",
+                            marginBottom: 8,
+                            fontSize: "16px",
+                            color: "#333",
+                          }}
+                        >
+                          {role}
+                        </strong>
+
+                        {/* Male/Female inputs */}
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: 6,
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <label style={{ fontSize: "14px" }}>Male:</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={data.male || 0}
+                              onChange={(e) =>
+                                setEditingEvents({
+                                  ...editingEvents,
+                                  staff: {
+                                    ...editingEvents.staff,
+                                    [role]: {
+                                      ...data,
+                                      male: parseInt(e.target.value) || 0,
+                                    },
+                                  },
+                                })
+                              }
+                              style={{
+                                width: "60px",
+                                padding: "4px 6px",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
+                                fontSize: "13px",
+                              }}
+                            />
+                          </div>
+
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <label style={{ fontSize: "14px" }}>Female:</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={data.female || 0}
+                              onChange={(e) =>
+                                setEditingEvents({
+                                  ...editingEvents,
+                                  staff: {
+                                    ...editingEvents.staff,
+                                    [role]: {
+                                      ...data,
+                                      female: parseInt(e.target.value) || 0,
+                                    },
+                                  },
+                                })
+                              }
+                              style={{
+                                width: "60px",
+                                padding: "4px 6px",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
+                                fontSize: "13px",
+                              }}
+                            />
+                          </div>
                         </div>
-                      );
-                    })}
-                    {event.extraExpenses > 0 && <div>Extra: {event.extraExpenses}$</div>}
-                  </td>
-                  <td style={currentEventsTdStyle}>
-                    {editable && (
-                      <button style={currentEventsButtonStyle(false)} onClick={() => setEditingEvents(eventss)}>Edit</button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
 
-      {editingEvents && (
-  <div
-    style={{
-      position: "fixed",
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: "100%",
-      background: "rgba(0,0,0,0.5)",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: 999,
-    }}
-  >
-    <div
-      style={{
-        background: "#fff",
-        padding: "25px 30px",
-        borderRadius: "10px",
-        width: "480px",
-        maxHeight: "90%",
-        overflowY: "auto",
-        boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
-      }}
-    >
-      <h3 style={{ marginBottom: 20, textAlign: "center", fontSize: "20px" }}>
-        Edit Event
-      </h3>
+                        {/* Assigned/Required count */}
+                        <div
+                          style={{
+                            textAlign: "left",
+                            fontSize: "13px",
+                            color: "#555",
+                            marginBottom: 6,
+                          }}
+                        >
+                          {assigned}/{required}
+                        </div>
 
-      {/* Event Fields */}
-      <div style={{ marginBottom: 15 }}>
-        <label style={{ fontWeight: 500 }}>Name:</label>
-        <input
-          type="text"
-          value={editingEvents.name || ""}
-          onChange={(e) =>
-            setEditingEvents({ ...editingEvents, name: e.target.value })
-          }
-          style={{
-            width: "100%",
-            padding: "8px",
-            borderRadius: "5px",
-            border: "1px solid #ccc",
-            marginTop: 5,
-          }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 15 }}>
-        <label style={{ fontWeight: 500 }}>Start:</label>
-        <input
-          type="datetime-local"
-          value={editingEvents.startDateTime || ""}
-          onChange={(e) =>
-            setEditingEvents({
-              ...editingEvents,
-              startDateTime: e.target.value,
-            })
-          }
-          style={{
-            width: "100%",
-            padding: "8px",
-            borderRadius: "5px",
-            border: "1px solid #ccc",
-            marginTop: 5,
-          }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 15 }}>
-        <label style={{ fontWeight: 500 }}>End:</label>
-        <input
-          type="datetime-local"
-          value={editingEvents.endDateTime || ""}
-          onChange={(e) =>
-            setEditingEvents({
-              ...editingEvents,
-              endDateTime: e.target.value,
-            })
-          }
-          style={{
-            width: "100%",
-            padding: "8px",
-            borderRadius: "5px",
-            border: "1px solid #ccc",
-            marginTop: 5,
-          }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 15 }}>
-        <label style={{ fontWeight: 500 }}>Location:</label>
-        <input
-          type="text"
-          value={editingEvents.location || ""}
-          onChange={(e) =>
-            setEditingEvents({ ...editingEvents, location: e.target.value })
-          }
-          style={{
-            width: "100%",
-            padding: "8px",
-            borderRadius: "5px",
-            border: "1px solid #ccc",
-            marginTop: 5,
-          }}
-        />
-      </div>
-
-      <div style={{ marginBottom: 25 }}>
-        <label style={{ fontWeight: 500 }}>Extra Expenses:</label>
-        <input
-          type="number"
-          value={editingEvents.extraExpenses || 0}
-          onChange={(e) =>
-            setEditingEvents({
-              ...editingEvents,
-              extraExpenses: parseInt(e.target.value) || 0,
-            })
-          }
-          style={{
-            width: "100%",
-            padding: "8px",
-            borderRadius: "5px",
-            border: "1px solid #ccc",
-            marginTop: 5,
-          }}
-        />
-      </div>
-
-      {/* Staff Section */}
-    {/* Staff Details */}
-<h4
-  style={{
-    marginTop: 10,
-    marginBottom: 10,
-    fontSize: "18px",
-    borderBottom: "1px solid #ddd",
-    paddingBottom: 6,
-  }}
->
-  Staff Details
-</h4>
-
-{Object.entries(editingEvents?.staff || {}).map(([role, data]) => {
-  const assigned = (data.male || 0) + (data.female || 0);
-  const required = data.required || assigned;
-
-  return (
-    <div
-      key={role}
-      style={{
-        border: "1px solid #ccc",
-        borderRadius: "6px",
-        padding: "12px",
-        marginBottom: "15px",
-        background: "#f9f9f9",
-      }}
-    >
-      {/* Role */}
-      <strong
-        style={{
-          display: "block",
-          marginBottom: 8,
-          fontSize: "16px",
-          color: "#333",
-        }}
-      >
-        {role}
-      </strong>
-
-      {/* Male/Female inputs */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 6,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <label style={{ fontSize: "14px" }}>Male:</label>
-          <input
-            type="number"
-            min="0"
-            value={data.male || 0}
-            onChange={(e) =>
-              setEditingEvents({
-                ...editingEvents,
-                staff: {
-                  ...editingEvents.staff,
-                  [role]: {
-                    ...data,
-                    male: parseInt(e.target.value) || 0,
-                  },
-                },
-              })
-            }
-            style={{
-              width: "60px",
-              padding: "4px 6px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-              fontSize: "13px",
-            }}
-          />
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <label style={{ fontSize: "14px" }}>Female:</label>
-          <input
-            type="number"
-            min="0"
-            value={data.female || 0}
-            onChange={(e) =>
-              setEditingEvents({
-                ...editingEvents,
-                staff: {
-                  ...editingEvents.staff,
-                  [role]: {
-                    ...data,
-                    female: parseInt(e.target.value) || 0,
-                  },
-                },
-              })
-            }
-            style={{
-              width: "60px",
-              padding: "4px 6px",
-              borderRadius: "4px",
-              border: "1px solid #ccc",
-              fontSize: "13px",
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Assigned/Required count */}
-      <div
-        style={{
-          textAlign: "left",
-          fontSize: "13px",
-          color: "#555",
-          marginBottom: 6,
-        }}
-      >
-        {assigned}/{required}
-      </div>
-
-      {/* Progress bar */}
-      <div
-        style={{
-          height: "8px",
-          background: "#e0e0e0",
-          borderRadius: "4px",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            height: "100%",
-            width: `${(assigned / required) * 100}%`,
-            background: assigned >= required ? "#4caf50" : "#f57c00",
-            transition: "width 0.3s ease",
-          }}
-        />
-      </div>
-    </div>
-  );
-})}
-
-
-      {/* Buttons */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: "10px",
-          marginTop: 10,
-        }}
-      >
-        <button
-          onClick={handleSave}
-          style={{
-            background: "#4caf50",
-            color: "#fff",
-            padding: "8px 16px",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-          }}
-        >
-          Save
-        </button>
-        <button
-          onClick={() => setEditingEvents(null)}
-          style={{
-            background: "#ccc",
-            color: "#000",
-            padding: "8px 16px",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-          }}
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-    </div>
-        )}
-  
-           {activeTab === "Event History" && (
-             <div>
-      <input
-        type="text"
-        placeholder="Search by name, staff role, or date..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        style={{ padding: "8px", width: "300px", marginBottom: "10px", borderRadius: "6px", border: "1px solid #ccc" }}
-      />
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 900 }}>
-          <thead>
-            <tr>
-              <th style={thStyle} onClick={() => handleSort("name")}>
-                Name {sortConfig.key === "name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
-              </th>
-              <th style={thStyle} onClick={() => handleSort("startDateTime")}>
-                Start {sortConfig.key === "startDateTime" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
-              </th>
-              <th style={thStyle} onClick={() => handleSort("endDateTime")}>
-                End {sortConfig.key === "endDateTime" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
-              </th>
-              <th style={thStyle}>Location</th>
-              <th style={thStyle}>Staff & Budget</th>
-              <th style={thStyle}>Extra Expenses</th>
-              <th style={thStyle}>Status</th>
-              <th style={thStyle}>All Payments Made</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredEventss.length > 0 ? (
-              filteredEventss.map((event) => (
-                <tr key={event.id}>
-                  <td style={tdStyle}>{event.name}</td>
-                  <td style={tdStyle}>{formatDateTime(event.startDateTime)}</td>
-                  <td style={tdStyle}>{formatDateTime(event.endDateTime)}</td>
-                  <td style={tdStyle}>{event.location}</td>
-                  <td style={tdStyle}>
-                    {Object.entries(event.staff).map(([role, data]) => (
-                      <div key={role}>
-                        {role}: {data.male + data.female} ({calculateStaffBudget(data)}$) {data.paid ? "✅" : "❌"}
+                        {/* Progress bar */}
+                        <div
+                          style={{
+                            height: "8px",
+                            background: "#e0e0e0",
+                            borderRadius: "4px",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <div
+                            style={{
+                              height: "100%",
+                              width: `${(assigned / required) * 100}%`,
+                              background: assigned >= required ? "#4caf50" : "#f57c00",
+                              transition: "width 0.3s ease",
+                            }}
+                          />
+                        </div>
                       </div>
-                    ))}
-                  </td>
-                  <td style={tdStyle}>
-                    {event.extraExpenses > 0 ? `${event.extraExpenses}$ ${event.extraPaid ? "✅" : "❌"}` : "-"}
-                  </td>
-                  <td style={tdStyle}>{event.status || "Completed"}</td>
-                  <td style={tdStyle}>{isAllPaid(event) ? "✅ Paid" : "❌ Pending"}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td style={tdStyle} colSpan={8}>No events found</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  
-           )}
+                    );
+                  })}
 
-    
-    
+
+                  {/* Buttons */}
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: "10px",
+                      marginTop: 10,
+                    }}
+                  >
+                    <button
+                      onClick={handleSave}
+                      style={{
+                        background: "#4caf50",
+                        color: "#fff",
+                        padding: "8px 16px",
+                        border: "none",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditingEvents(null)}
+                      style={{
+                        background: "#ccc",
+                        color: "#000",
+                        padding: "8px 16px",
+                        border: "none",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "Event History" && (
+          <div>
+            <input
+              type="text"
+              placeholder="Search by name, staff role, or date..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ padding: "8px", width: "300px", marginBottom: "10px", borderRadius: "6px", border: "1px solid #ccc" }}
+            />
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 900 }}>
+                <thead>
+                  <tr>
+                    <th style={thStyle} onClick={() => handleSort("name")}>
+                      Name {sortConfig.key === "name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+                    </th>
+                    <th style={thStyle} onClick={() => handleSort("startDateTime")}>
+                      Start {sortConfig.key === "startDateTime" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+                    </th>
+                    <th style={thStyle} onClick={() => handleSort("endDateTime")}>
+                      End {sortConfig.key === "endDateTime" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+                    </th>
+                    <th style={thStyle}>Location</th>
+                    <th style={thStyle}>Staff & Budget</th>
+                    <th style={thStyle}>Extra Expenses</th>
+                    <th style={thStyle}>Status</th>
+                    <th style={thStyle}>All Payments Made</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredEventss.length > 0 ? (
+                    filteredEventss.map((event) => (
+                      <tr key={event.id}>
+                        <td style={tdStyle}>{event.name}</td>
+                        <td style={tdStyle}>{formatDateTime(event.startDateTime)}</td>
+                        <td style={tdStyle}>{formatDateTime(event.endDateTime)}</td>
+                        <td style={tdStyle}>{event.location}</td>
+                        <td style={tdStyle}>
+                          {Object.entries(event.staff).map(([role, data]) => (
+                            <div key={role}>
+                              {role}: {data.male + data.female} ({calculateStaffBudget(data)}$) {data.paid ? "✅" : "❌"}
+                            </div>
+                          ))}
+                        </td>
+                        <td style={tdStyle}>
+                          {event.extraExpenses > 0 ? `${event.extraExpenses}$ ${event.extraPaid ? "✅" : "❌"}` : "-"}
+                        </td>
+                        <td style={tdStyle}>{event.status || "Completed"}</td>
+                        <td style={tdStyle}>{isAllPaid(event) ? "✅ Paid" : "❌ Pending"}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td style={tdStyle} colSpan={8}>No events found</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        )}
+
+
+
         {/* Staff List */}
         {activeTab === "Staff List" && (
-         <div style={{ padding: 20, fontFamily: "Arial, sans-serif" }}>
-      <h2>Staff List</h2>
-      <StaffDirectoryUnique staffList={staffRecords} onSelect={setSelectedStaffId} />
+          <div style={{ padding: 20, fontFamily: "Arial, sans-serif" }}>
+            <h2>Staff List</h2>
+            <StaffDirectoryUnique staffList={staffRecords} onSelect={setSelectedStaffId} />
 
-      <StaffDetailModal
-        staff={selectedStaff}
-        events={selectedEvents}
-        ratingMap={starRatingMap}
-        setRatingMap={setStarRatingMap}
-        onClose={() => setSelectedStaffId(null)}
-        onRate={handleRate}
-        onPay={handleOpenPayment}
-      />
+            <StaffDetailModal
+              staff={selectedStaff}
+              events={selectedEvents}
+              ratingMap={starRatingMap}
+              setRatingMap={setStarRatingMap}
+              onClose={() => setSelectedStaffId(null)}
+              onRate={handleRate}
+              onPay={handleOpenPayment}
+            />
 
-      <PaymentModalUnique
-        open={paymentModalState.open}
-        event={selectedEvents[paymentModalState.eventIdx]}
-        onClose={() => setPaymentModalState({ open: false, eventIdx: null })}
-        onSubmit={handlePaymentSubmit}
-      />
-    </div>
+            <PaymentModalUnique
+              open={paymentModalState.open}
+              event={selectedEvents[paymentModalState.eventIdx]}
+              onClose={() => setPaymentModalState({ open: false, eventIdx: null })}
+              onSubmit={handlePaymentSubmit}
+            />
+          </div>
         )}
 
         {/* Profile */}
@@ -1646,24 +1857,24 @@ const handleSave = () => {
               <h2 style={{ marginBottom: 20 }}>📋 Create New Event</h2>
 
               <label>Event Name *</label>
-            <input
-              name="eventName"
-              value={form.eventName}
-              onChange={handleChange}
-              placeholder="Enter event name"
-              required
-              style={{ width: "100%", marginBottom: 10, fontSize: 14 }}
-            />
-            
-            <div style={{ marginBottom: 15 }}>
-              <label style={{ marginBottom: 5, display: "block" }}>Start Date & Time *</label>
-              <input type="datetime-local" name="startDateTime" value={form.startDateTime} onChange={handleChange} style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #ccc", fontSize: 14 }} />
-            </div>
+              <input
+                name="eventName"
+                value={form.eventName}
+                onChange={handleChange}
+                placeholder="Enter event name"
+                required
+                style={{ width: "100%", marginBottom: 10, fontSize: 14 }}
+              />
 
-            <div style={{ marginBottom: 15 }}>
-              <label style={{ marginBottom: 5, display: "block" }}>End Date & Time *</label>
-              <input type="datetime-local" name="endDateTime" value={form.endDateTime} onChange={handleChange} style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #ccc", fontSize: 14 }} />
-            </div>
+              <div style={{ marginBottom: 15 }}>
+                <label style={{ marginBottom: 5, display: "block" }}>Start Date & Time *</label>
+                <input type="datetime-local" name="startDateTime" value={form.startDateTime} onChange={handleChange} style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #ccc", fontSize: 14 }} />
+              </div>
+
+              <div style={{ marginBottom: 15 }}>
+                <label style={{ marginBottom: 5, display: "block" }}>End Date & Time *</label>
+                <input type="datetime-local" name="endDateTime" value={form.endDateTime} onChange={handleChange} style={{ width: "100%", padding: "8px 12px", borderRadius: 6, border: "1px solid #ccc", fontSize: 14 }} />
+              </div>
 
               <label>Location *</label>
               <input placeholder="Search city" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} style={{ width: "80%", marginBottom: 10, marginRight: 5 }} />
@@ -1695,100 +1906,100 @@ const handleSave = () => {
               </MapContainer>
 
               <label>Staff Required *</label>
-            <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 20 }}>
-              <thead>
-                <tr style={{ background: "#f9fafb" }}>
-                  <th>Role</th><th>Male</th><th>Female</th><th>Budget</th><th>Comments</th>
-                </tr>
-              </thead>
-              <tbody>
-                {roles.map(role => {
-                  const isDJAnchor = role === "DJ" || role === "Anchor";
-                  const staffData = form.staff[role] || {};
-                  return (
-                    <React.Fragment key={role}>
-                      <tr>
-                        <td><b>{role}</b></td>
-
-                        {!isDJAnchor ? (
-                          <>
-                            <td><input type="number" min={0} value={staffData.male || ''} onChange={e => handleStaffChange(role, 'male', e.target.value)} style={{ width: 60 }} /></td>
-                            <td><input type="number" min={0} value={staffData.female || ''} onChange={e => handleStaffChange(role, 'female', e.target.value)} style={{ width: 60 }} /></td>
-                          </>
-                        ) : (
-                          <>
-                            <td><input type="radio" name={`${role}-gender`} checked={staffData.male === 1} onChange={() => handleDJAnchorSelect(role, 'male')} /></td>
-                            <td><input type="radio" name={`${role}-gender`} checked={staffData.female === 1} onChange={() => handleDJAnchorSelect(role, 'female')} /></td>
-                          </>
-                        )}
-
-                        <td><input type="number" min={0} value={staffData.budget || ''} placeholder="₹/person" onChange={e => handleStaffChange(role, 'budget', e.target.value)} style={{ width: 90 }} /></td>
-                        <td><textarea value={staffData.comments || ""} onChange={e => handleCommentChange(role, e.target.value)} style={{ width: "100%" }} /></td>
-                      </tr>
-
-                      {staffData.specialReq && staffData.specialReq.length > 0 && (
+              <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 20 }}>
+                <thead>
+                  <tr style={{ background: "#f9fafb" }}>
+                    <th>Role</th><th>Male</th><th>Female</th><th>Budget</th><th>Comments</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {roles.map(role => {
+                    const isDJAnchor = role === "DJ" || role === "Anchor";
+                    const staffData = form.staff[role] || {};
+                    return (
+                      <React.Fragment key={role}>
                         <tr>
-                          <td colSpan={5} style={{ paddingLeft: 20 }}>
-                            <b>Special Requirements:</b>{" "}
-                            {staffData.specialReq.map(req => <span key={req} style={{ display: "inline-block", color: "#000", padding: "2px 6px", borderRadius: 4, marginRight: 5, marginBottom: 5 }}>{req}</span>)}
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
+                          <td><b>{role}</b></td>
 
-            {activeSpecialRole && form.staff[activeSpecialRole] && (form.staff[activeSpecialRole].male || form.staff[activeSpecialRole].female) > 0 && (
-              <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }}>
-                <div style={{ background: "#fff", padding: 20, borderRadius: 8, width: 400 }}>
-                  <h3>Select Special Requirements for {activeSpecialRole}</h3>
-                  <select multiple style={{ width: "100%", height: 150 }} value={form.staff[activeSpecialRole]?.specialReq || []} onChange={e => handleSpecialReqChange(activeSpecialRole, Array.from(e.target.selectedOptions).map(o => o.value))}>
-                    {specialRequirements[activeSpecialRole].map(option => <option key={option} value={option}>{option}</option>)}
-                  </select>
-                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
-                    <button onClick={closeSpecialPopup} style={{ padding: "5px 10px" }}>Close</button>
+                          {!isDJAnchor ? (
+                            <>
+                              <td><input type="number" min={0} value={staffData.male || ''} onChange={e => handleStaffChange(role, 'male', e.target.value)} style={{ width: 60 }} /></td>
+                              <td><input type="number" min={0} value={staffData.female || ''} onChange={e => handleStaffChange(role, 'female', e.target.value)} style={{ width: 60 }} /></td>
+                            </>
+                          ) : (
+                            <>
+                              <td><input type="radio" name={`${role}-gender`} checked={staffData.male === 1} onChange={() => handleDJAnchorSelect(role, 'male')} /></td>
+                              <td><input type="radio" name={`${role}-gender`} checked={staffData.female === 1} onChange={() => handleDJAnchorSelect(role, 'female')} /></td>
+                            </>
+                          )}
+
+                          <td><input type="number" min={0} value={staffData.budget || ''} placeholder="₹/person" onChange={e => handleStaffChange(role, 'budget', e.target.value)} style={{ width: 90 }} /></td>
+                          <td><textarea value={staffData.comments || ""} onChange={e => handleCommentChange(role, e.target.value)} style={{ width: "100%" }} /></td>
+                        </tr>
+
+                        {staffData.specialReq && staffData.specialReq.length > 0 && (
+                          <tr>
+                            <td colSpan={5} style={{ paddingLeft: 20 }}>
+                              <b>Special Requirements:</b>{" "}
+                              {staffData.specialReq.map(req => <span key={req} style={{ display: "inline-block", color: "#000", padding: "2px 6px", borderRadius: 4, marginRight: 5, marginBottom: 5 }}>{req}</span>)}
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {activeSpecialRole && form.staff[activeSpecialRole] && (form.staff[activeSpecialRole].male || form.staff[activeSpecialRole].female) > 0 && (
+                <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }}>
+                  <div style={{ background: "#fff", padding: 20, borderRadius: 8, width: 400 }}>
+                    <h3>Select Special Requirements for {activeSpecialRole}</h3>
+                    <select multiple style={{ width: "100%", height: 150 }} value={form.staff[activeSpecialRole]?.specialReq || []} onChange={e => handleSpecialReqChange(activeSpecialRole, Array.from(e.target.selectedOptions).map(o => o.value))}>
+                      {specialRequirements[activeSpecialRole].map(option => <option key={option} value={option}>{option}</option>)}
+                    </select>
+                    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+                      <button onClick={closeSpecialPopup} style={{ padding: "5px 10px" }}>Close</button>
+                    </div>
                   </div>
                 </div>
+              )}
+
+              <div style={{ display: "flex", gap: "40px", marginBottom: 20 }}>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                  <label>Total Staff (👥)</label>
+                  <input
+                    type="text"
+                    value={totalStaffCount}
+                    readOnly
+                    style={{
+                      width: "100%",
+                      height: 42,
+                      padding: "8px 12px",
+                      backgroundColor: "#f4f4f4",
+                      borderRadius: 6,
+                      border: "1px solid #ccc",
+                    }}
+                  />
+                </div>
+
+                <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                  <label>Total Budget (₹)</label>
+                  <input
+                    type="text"
+                    value={totalBudget}
+                    readOnly
+                    style={{
+                      width: "100%",
+                      height: 42,
+                      padding: "8px 12px",
+                      backgroundColor: "#f4f4f4",
+                      borderRadius: 6,
+                      border: "1px solid #ccc",
+                    }}
+                  />
+                </div>
               </div>
-            )}
-
-         <div style={{ display: "flex", gap: "40px", marginBottom: 20 }}>
-  <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-    <label>Total Staff (👥)</label>
-    <input
-      type="text"
-      value={totalStaffCount}
-      readOnly
-      style={{
-        width: "100%",
-        height: 42,
-        padding: "8px 12px",
-        backgroundColor: "#f4f4f4",
-        borderRadius: 6,
-        border: "1px solid #ccc",
-      }}
-    />
-  </div>
-
-  <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-    <label>Total Budget (₹)</label>
-    <input
-      type="text"
-      value={totalBudget}
-      readOnly
-      style={{
-        width: "100%",
-        height: 42,
-        padding: "8px 12px",
-        backgroundColor: "#f4f4f4",
-        borderRadius: 6,
-        border: "1px solid #ccc",
-      }}
-    />
-  </div>
-</div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 }}>
                 <button
@@ -1809,7 +2020,7 @@ const handleSave = () => {
         )}
       </div>
 
-      {showProfilePreview && (
+      {/* {showProfilePreview && (
         <div
           onClick={() => setShowProfilePreview(false)}
           style={{
@@ -1830,7 +2041,7 @@ const handleSave = () => {
             />
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Notifications modal */}
       {showDropdown && (

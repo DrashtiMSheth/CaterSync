@@ -56,4 +56,6 @@ router.get("/profile", auth, role("organiser"), organiserController.getProfile);
 
 router.put("/profile", auth, role("organiser"), upload.single("companyLogo"), organiserController.updateProfile);
 
+router.get("/profile", verifyOrganiserToken, getProfile);
+
 module.exports = router;

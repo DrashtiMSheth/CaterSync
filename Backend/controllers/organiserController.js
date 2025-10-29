@@ -1,14 +1,17 @@
 const jwt = require("jsonwebtoken");
+const fs = require("fs");
+const path = require("path");
 const Organiser = require("../models/Organiser");
 const Event = require("../models/Event");
 const Staff = require("../models/Staff");
-const path = require("path");
 
+
+// ================== REGISTER ==================
 exports.register = async (req, res, next) => {
   try {
     const { fullName, email, phone, password, organiserName, businessType, officeAddress = "", website = "" } = req.body;
 
-    // Pre-check for duplicates to avoid 500s from unique indexes
+    // Prevent duplicate email/phone
     const existing = await Organiser.findOne({ $or: [{ email }, { phone }] });
     if (existing) {
       if (existing.email === email)
@@ -17,11 +20,18 @@ exports.register = async (req, res, next) => {
         return next({ statusCode: 400, message: "Phone already registered" });
     }
 
-    const logo = req.file ? path.join("uploads", req.file.filename) : "";
+    const companyLogo = req.file ? path.join("uploads", req.file.filename) : "";
 
     const newOrg = new Organiser({
-      fullName, email, phone, password,
-      organiserName, businessType, officeAddress, website, logo
+      fullName,
+      email,
+      phone,
+      password,
+      organiserName,
+      businessType,
+      officeAddress,
+      website,
+      companyLogo,
     });
 
     await newOrg.save();
@@ -29,17 +39,23 @@ exports.register = async (req, res, next) => {
     const token = jwt.sign({ id: newOrg._id, role: "organiser" }, process.env.JWT_SECRET, { expiresIn: "1d" });
     newOrg.password = undefined;
 
-    res.status(201).json({ success: true, message: "Organiser registered", organiser: newOrg, token });
+    res.status(201).json({
+      success: true,
+      message: "Organiser registered successfully",
+      organiser: newOrg,
+      token,
+    });
   } catch (err) {
     console.error("Organiser register error:", err);
     next(err);
   }
 };
 
+
+// ================== LOGIN ==================
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-
     const org = await Organiser.findOne({ email });
     if (!org) return next({ statusCode: 400, message: "Invalid email" });
 
@@ -56,33 +72,65 @@ exports.login = async (req, res, next) => {
   }
 };
 
+
+// ================== GET PROFILE ==================
 exports.getProfile = async (req, res, next) => {
   try {
-    const organiser = await Organiser.findById(req.user.id);
-    if (!organiser) return next({ statusCode: 404, message: "Organiser not found" });
+    const organiser = await Organiser.findById(req.user.id).select("-password");
+    if (!organiser) {
+      return res.status(404).json({ message: "Organiser not found" });
+    }
 
-    organiser.password = undefined;
-    res.json({ success: true, organiser });
+    res.json({
+      success: true,
+      organiser,
+    });
   } catch (err) {
     console.error("Get organiser profile error:", err);
     next(err);
   }
 };
 
+
+// ================== UPDATE PROFILE ==================
 exports.updateProfile = async (req, res, next) => {
   try {
     const updates = req.body;
-    const organiser = await Organiser.findByIdAndUpdate(req.user.id, updates, { new: true });
-    if (!organiser) return next({ statusCode: 404, message: "Organiser not found" });
+
+    if (req.file) {
+      updates.companyLogo = path.join("uploads", req.file.filename);
+
+      // Remove old logo if it exists
+      const existing = await Organiser.findById(req.user.id);
+      if (existing && existing.companyLogo && fs.existsSync(existing.companyLogo)) {
+        fs.unlinkSync(existing.companyLogo);
+      }
+    }
+
+    const organiser = await Organiser.findByIdAndUpdate(req.user.id, updates, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!organiser) {
+      return next({ statusCode: 404, message: "Organiser not found" });
+    }
 
     organiser.password = undefined;
-    res.json({ success: true, message: "Profile updated", organiser });
+
+    res.json({
+      success: true,
+      message: "Profile updated successfully",
+      organiser,
+    });
   } catch (err) {
     console.error("Update organiser profile error:", err);
     next(err);
   }
 };
 
+
+// ================== CREATE EVENT ==================
 exports.createEvent = async (req, res, next) => {
   try {
     const { name, description = "", location, startDateTime, endDateTime, priority = 1, requiredStaff = 1, attachments = [] } = req.body;
@@ -102,17 +150,24 @@ exports.createEvent = async (req, res, next) => {
       organiser: req.user.id,
       attachments,
       approved: true,
-      applications: []
+      applications: [],
     });
 
     await newEvent.save();
-    res.status(201).json({ success: true, message: "Event created successfully", event: newEvent });
+
+    res.status(201).json({
+      success: true,
+      message: "Event created successfully",
+      event: newEvent,
+    });
   } catch (err) {
     console.error("Create event error:", err);
     next(err);
   }
 };
 
+
+// ================== GET EVENTS ==================
 exports.getEvents = async (req, res, next) => {
   try {
     const events = await Event.find({ organiser: req.user.id })
@@ -125,39 +180,55 @@ exports.getEvents = async (req, res, next) => {
   }
 };
 
+
+// ================== HANDLE APPLICATION ==================
 exports.handleApplication = async (req, res, next) => {
   try {
     const { eventId, staffId, action } = req.body;
 
     const event = await Event.findById(eventId).populate("organiser");
     if (!event) return next({ statusCode: 404, message: "Event not found" });
-    if (event.organiser._id.toString() !== req.user.id) return next({ statusCode: 403, message: "Unauthorized" });
+    if (event.organiser._id.toString() !== req.user.id)
+      return next({ statusCode: 403, message: "Unauthorized" });
 
     const app = event.applications.find(a => a.staff.toString() === staffId);
     if (!app) return next({ statusCode: 404, message: "Application not found" });
-    if (!["accept", "reject"].includes(action)) return next({ statusCode: 400, message: "Invalid action" });
+
+    if (!["accept", "reject"].includes(action))
+      return next({ statusCode: 400, message: "Invalid action" });
 
     app.status = action === "accept" ? "accepted" : "rejected";
     await event.save();
 
     const io = req.app.get("io");
     if (io) {
-      io.to(staffId).emit("application-status-changed", { eventId, status: app.status });
+      io.to(staffId).emit("application-status-changed", {
+        eventId,
+        status: app.status,
+      });
     }
 
-    res.json({ success: true, message: `Application ${app.status}`, event });
+    res.json({
+      success: true,
+      message: `Application ${app.status}`,
+      event,
+    });
   } catch (err) {
     console.error("Handle application error:", err);
     next(err);
   }
 };
 
+
+// ================== GET EVENT APPLICATIONS ==================
 exports.getEventApplications = async (req, res, next) => {
   try {
     const { eventId } = req.params;
+    const event = await Event.findById(eventId).populate(
+      "applications.staff",
+      "fullName email phone profilePic"
+    );
 
-    const event = await Event.findById(eventId)
-      .populate("applications.staff", "fullName email phone profilePic");
     if (!event) return next({ statusCode: 404, message: "Event not found" });
 
     res.json({ success: true, applications: event.applications });
