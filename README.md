@@ -10,7 +10,7 @@ From chefs and servers to drivers and DJs — SmartServe brings every role under
 
 Managing workforce during large events can be chaotic — from chefs and waiters to drivers and decorators, every role matters.  
 
-**SmartServe** eliminates this chaos by offering a **modern, intelligent workforce management solution** that ensures the right people are at the right place, at the right time.
+**CaterSync** eliminates this chaos by offering a **modern, intelligent workforce management solution** that ensures the right people are at the right place, at the right time.
 
 ---
 
