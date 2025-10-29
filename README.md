@@ -2,7 +2,7 @@
 
 **CaterSync** is a real-time, location-based **event workforce management platform** that connects event organisers with catering and event staff for seamless event execution.  
 
-From chefs and servers to drivers and DJs — SmartServe brings every role under one unified digital system for efficient, transparent coordination.
+From chefs and servers to drivers and DJs — CaterSync brings every role under one unified digital system for efficient, transparent coordination.
 
 ---
 
