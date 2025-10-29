@@ -316,13 +316,9 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
     { id: 1, type: "apply", message: "Alice applied for Event A", staff: "Alice", event: "Event A", status: "pending", createdAt: Date.now() - 1000 * 60 * 60 },
     { id: 2, type: "rating", message: "Bob rated your organisation ⭐ 4", staff: "Bob", status: "info", createdAt: Date.now() - 1000 * 60 * 30 },
     { id: 3, type: "warning", message: "Charlie tried to apply twice for Event B", status: "warning", createdAt: Date.now() - 1000 * 60 * 5 },
-    { id: 4, type: "apply", message: "Alice applied for Event A", staff: "Alice", event: "Event A", status: "pending", createdAt: Date.now() - 1000 * 60 * 60 },
-    { id: 5, type: "rating", message: "Bob rated your organisation ⭐ 4", staff: "Bob", status: "info", createdAt: Date.now() - 1000 * 60 * 30 },
-    { id: 6, type: "warning", message: "Charlie tried to apply twice for Event B", status: "warning", createdAt: Date.now() - 1000 * 60 * 5 },
-    { id: 7, type: "apply", message: "Alice applied for Event A", staff: "Alice", event: "Event A", status: "pending", createdAt: Date.now() - 1000 * 60 * 60 },
-    { id: 8, type: "rating", message: "Bob rated your organisation ⭐ 4", staff: "Bob", status: "info", createdAt: Date.now() - 1000 * 60 * 30 },
-    { id: 9, type: "warning", message: "Charlie tried to apply twice for Event B", status: "warning", createdAt: Date.now() - 1000 * 60 * 5 },
-  ]);
+    { id: 4, type: "apply", message: "abc applied for product launch", staff: "Alice", event: "Event A", status: "pending", createdAt: Date.now() - 1000 * 60 * 60 },
+    { id: 5, type: "rating", message: "C rated your organisation ⭐ 3", staff: "Bob", status: "info", createdAt: Date.now() - 1000 * 60 * 30 },
+ ]);
   const [showDropdown, setShowDropdown] = useState(false);
   // const [showProfilePreview, setShowProfilePreview] = useState(false);
   // const [searchQuery, setSearchQuery] = useState("");

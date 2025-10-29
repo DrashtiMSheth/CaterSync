@@ -2,9 +2,9 @@ import React, { useMemo } from "react";
 
 export default function LandingPage({
   go,
-  logo = "⚡ SmartServe",
-  title = "SmartServe — Where Organisers and Staff Work in Perfect Sync",
-  subtitle = "Powering seamless event collaboration with smart, real-time workforce management.",
+  logo = "🔗 CaterSync",
+  title = "CaterSync — Where Organisers and Staff Work in Perfect Sync",
+  subtitle = "From chaos to coordination — bringing organisers and staff together through code.",
   organiserBtnLabel = "📋 Organiser Entrance", 
   staffBtnLabel = "👨‍🍳 Staff Entrance",
   footerText,
@@ -62,7 +62,7 @@ export default function LandingPage({
         </div>
 
         <footer className="footer" style={{ fontSize: "0.9rem" }}>
-          {footerText || `© ${new Date().getFullYear()} SmartServe Platform`}
+          {footerText || `© ${new Date().getFullYear()} CaterSync Platform`}
         </footer>
       </div>
 
