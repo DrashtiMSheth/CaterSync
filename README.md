@@ -93,8 +93,8 @@ Ensure the following are installed:
 
 ```bash
 # Clone the repository
-git clone https://github.com/DrashtiMSheth/SmartServe
-cd SmartServe
+git clone https://github.com/DrashtiMSheth/CaterSync
+cd CaterSync
 
 # Install backend dependencies
 cd Backend
