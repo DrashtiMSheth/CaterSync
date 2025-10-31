@@ -119,27 +119,6 @@ npm start
 
 ```
 
-### 🔐 CORS & Auth
-- Backend CORS allows `http://localhost:3000` and `x-auth-token` headers for dev.
-- Frontend uses `REACT_APP_API_URL` as API base; falls back to `http://localhost:5050/api`.
-
-### 🧱 Project Structure (excerpt)
-```
-frontend/src/
-  components/
-    common/
-      DashboardCards.jsx
-      NotificationsModal.jsx
-      Sidebar.jsx
-    organiser/
-      PaymentModal.jsx
-      StaffDetailModal.jsx
-      StaffDirectory.jsx
-  pages/
-    OrganiserDashboard.jsx
-    StaffDashboard.jsx
-```
-
 ### 🔄 Routing
 - `/` landing, `/organiser/login`, `/organiser/register`, `/organiser` (protected)
 - `/staff/login`, `/staff/register`, `/staff` (protected)
