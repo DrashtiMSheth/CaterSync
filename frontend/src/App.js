@@ -1,5 +1,6 @@
 // src/App.js
-import React, { useState, useEffect } from "react";
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import "./AppStyles.css";
 
@@ -12,52 +13,44 @@ import StaffRegistration from "./pages/StaffRegistration";
 import OrganiserDashboard from "./pages/OrganiserDashboard";
 import StaffDashboard from "./pages/StaffDashboard";
 
+function ProtectedRoute({ children, role }) {
+  const { user, isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/" replace />;
+  if (role && user?.role !== role) return <Navigate to="/" replace />;
+  return children;
+}
+
 export default function App() {
-  const { user, logout } = useAuth();
-  const [route, setRoute] = useState("landing");
-  const [loading, setLoading] = useState(false);
-
-  // On initial load, check user role and auto-route
-  useEffect(() => {
-    if (user) {
-      if (user.role === "organiser") setRoute("organiser-dashboard");
-      else if (user.role === "staff") setRoute("staff-dashboard");
-    } else {
-      setRoute("landing");
-    }
-  }, [user]);
-
-  // Navigation helper
-  const go = (page) => {
-    setRoute(page);
-    setLoading(false);
-  };
-
-  // Render current route
-  const renderPage = () => {
-    switch (route) {
-      case "landing":
-        return <LandingPage go={go} />;
-      case "organiser-login":
-        return <OrganiserLogin go={go} loading={loading} setLoading={setLoading} />;
-      case "staff-login":
-        return <StaffLogin go={go} loading={loading} setLoading={setLoading} />;
-      case "organiser-register":
-        return <OrganiserRegistration go={go} loading={loading} setLoading={setLoading} />;
-      case "staff-register":
-        return <StaffRegistration go={go} loading={loading} setLoading={setLoading} />;
-      case "organiser-dashboard":
-        return <OrganiserDashboard go={go} />;
-      case "staff-dashboard":
-        return <StaffDashboard go={go} />;
-      default:
-        return <LandingPage go={go} />;
-    }
-  };
-
   return (
     <div className="app-container">
-      {renderPage()}
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+
+        <Route path="/organiser/login" element={<OrganiserLogin />} />
+        <Route path="/staff/login" element={<StaffLogin />} />
+
+        <Route path="/organiser/register" element={<OrganiserRegistration />} />
+        <Route path="/staff/register" element={<StaffRegistration />} />
+
+        <Route
+          path="/organiser"
+          element={
+            <ProtectedRoute role="organiser">
+              <OrganiserDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/staff"
+          element={
+            <ProtectedRoute role="staff">
+              <StaffDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </div>
   );
 }

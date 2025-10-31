@@ -1,5 +1,6 @@
 // src/pages/OrganiserRegistration.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { registerOrganiser, sendOtp } from "../api/api";
 import { useAuth } from "../context/AuthContext";
 import socket, { emitEvent } from "../utils/socket";
@@ -12,7 +13,8 @@ function getPasswordStrength(pw) {
   return { label: "Medium", color: "orange" };
 }
 
-export default function OrganiserRegistration({ go }) {
+export default function OrganiserRegistration() {
+  const navigate = useNavigate();
   const { login } = useAuth();
 
   const [step, setStep] = useState(1);
@@ -168,7 +170,7 @@ export default function OrganiserRegistration({ go }) {
       const response = await registerOrganiser(payload);
       emitEvent("notification", `${form.fullName} has registered!`);
       alert("✅ Registration successful. Please log in.");
-      go("organiser-login");
+      navigate("/organiser/login", { replace: true });
     } catch (err) {
       console.error("Registration error:", err);
       alert("❌ Registration failed");
@@ -395,8 +397,8 @@ export default function OrganiserRegistration({ go }) {
 <div>
              <p style={{ marginTop: "16px", fontSize: "14px" }}>
           Already have an account?{" "}
-          <button onClick={() => go("organiser-login")} style={{ background: "none", border: "none", color: "#00b894", textDecoration: "underline", cursor: "pointer" }}>Login here</button>{" "}
-          | <button onClick={() => go("landing")} style={{ background: "none", border: "none", color: "#00b894", textDecoration: "underline", cursor: "pointer" }}>Go to Landing Page 🏠</button>
+          <Link to="/organiser/login" style={{ color: "#00b894", textDecoration: "underline" }}>Login here</Link>{" "}
+          | <Link to="/" style={{ color: "#00b894", textDecoration: "underline" }}>Go to Landing Page 🏠</Link>
         </p>
       </div>
           </form>

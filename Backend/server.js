@@ -29,16 +29,17 @@ app.use(express.urlencoded({ extended: true }));
 
 // ✅ Allowed frontend origins (local + deployed)
 const FE_ORIGIN =
-  process.env.NODE_ENV === "production"
+  process.env.FE_ORIGIN ||
+  (process.env.NODE_ENV === "production"
     ? "https://location-frontend-delta.vercel.app"
-    : "http://localhost:5001";
+    : "http://localhost:3000");
 
 // ✅ CORS Configuration
 app.use(
   cors({
     origin: FE_ORIGIN,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
     credentials: true, // allow cookies/tokens
   })
 );

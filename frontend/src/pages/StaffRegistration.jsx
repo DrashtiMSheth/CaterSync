@@ -1,5 +1,6 @@
 // src/pages/StaffRegistration.jsx
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -69,8 +70,10 @@ function ChangeMapView({ coords }) {
 }
 
 // --- Main Component ---
-export default function StaffRegistration({ go, loading, setLoading }) {
+export default function StaffRegistration() {
+  const navigate = useNavigate();
   const { login } = useAuth(); // AuthContext login
+  const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     fullName: "", email: "", phone: "", password: "",
@@ -261,7 +264,7 @@ export default function StaffRegistration({ go, loading, setLoading }) {
         alert("🎉 Registration successful! Please log in.");
         login(data.token, data.staff); // ✅ auto login
         socket.emit("staff-registered", { id: data.staff._id, name: data.staff.fullName });
-        go("staff-login");
+        navigate("/staff/login", { replace: true });
       }
 
     } catch (err) { console.error(err); alert(err.message || "⚠️ Server connection failed"); }
@@ -414,8 +417,8 @@ export default function StaffRegistration({ go, loading, setLoading }) {
             <div>
              <p style={{ marginTop: "16px", fontSize: "14px" }}>
           Already have an account?{" "}
-          <button onClick={() => go("staff-login")} style={{ background: "none", border: "none", color: "#00b894", textDecoration: "underline", cursor: "pointer" }}>Login here</button>{" "}
-          | <button onClick={() => go("landing")} style={{ background: "none", border: "none", color: "#00b894", textDecoration: "underline", cursor: "pointer" }}>Go to Landing Page 🏠</button>
+          <Link to="/staff/login" style={{ color: "#00b894", textDecoration: "underline" }}>Login here</Link>{" "}
+          | <Link to="/" style={{ color: "#00b894", textDecoration: "underline" }}>Go to Landing Page 🏠</Link>
         </p>
       </div>
           </form>

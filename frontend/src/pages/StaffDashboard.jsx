@@ -4,6 +4,12 @@ import L from "leaflet";
 import axios from "axios";
 import "leaflet/dist/leaflet.css";
 import { payments } from "../utils/constants";
+import Sidebar from "../components/common/Sidebar";
+import DashboardCards from "../components/common/DashboardCards";
+import UpcomingEventsTable from "../components/staff/UpcomingEventsTable";
+import AppliedEventsTable from "../components/staff/AppliedEventsTable";
+import PaymentsTable from "../components/staff/PaymentsTable";
+import { getStaffProfile, getEvents } from "../api/api";
 
 // Fix default marker icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -70,37 +76,44 @@ export default function StaffDashboard({ bubbleCount = 15 }) {
   };
   // 
   
-  // Fetch profile on mount
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:5050/api/staff/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (data.success) {
-          setProfile({
-            profilePic:
-              data.staff.profilePic ||
-              "https://media.istockphoto.com/id/1191082076/photo/real-estate-designer-working-on-computer.jpg?s=612x612&w=0&k=20&c=JIwdczkVT71_C8Xrzo23fmpQ-3RQplSoNnZKEiyvYo4=",
-            fullName: data.staff.fullName || "",
-            email: data.staff.email || "",
-            phone: data.staff.phone || "",
-            availability: data.staff.availability || "",
-            gender: data.staff.gender || "",
-            languages: data.staff.languages || [],
-          });
-        } else {
-          console.error("Failed to load profile:", data.message);
-        }
-      } catch (err) {
-        console.error("Error fetching profile:", err);
-      }
-    };
+// Fetch profile + events on mount
+const [loadingProfile, setLoadingProfile] = useState(true);
+const [profileError, setProfileError] = useState("");
+const [loadingEvents, setLoadingEvents] = useState(true);
+const [eventsError, setEventsError] = useState("");
 
-    fetchProfile();
-  }, []);
+useEffect(() => {
+  (async () => {
+    try {
+      const token = localStorage.getItem("staffToken");
+      const data = await getStaffProfile(token);
+      const st = data.staff || data;
+      setProfile({
+        profilePic:
+          st.profilePic ||
+          "https://media.istockphoto.com/id/1191082076/photo/real-estate-designer-working-on-computer.jpg?s=612x612&w=0&k=20&c=JIwdczkVT71_C8Xrzo23fmpQ-3RQplSoNnZKEiyvYo4=",
+        fullName: st.fullName || "",
+        email: st.email || "",
+        phone: st.phone || "",
+        availability: st.availability || "",
+        gender: st.gender || "",
+        languages: st.languages || [],
+      });
+      setLoadingProfile(false);
+    } catch (err) {
+      setProfileError(err?.message || "Failed to load profile");
+      setLoadingProfile(false);
+    }
+    try {
+      const token = localStorage.getItem("staffToken");
+      await getEvents(token); // backend list; integrate mapping as needed
+      setLoadingEvents(false);
+    } catch (err) {
+      setEventsError(err?.message || "Failed to load events");
+      setLoadingEvents(false);
+    }
+  })();
+}, []);
 
   // Save profile updates
   const handleProfileSave = async () => {
@@ -712,44 +725,7 @@ export default function StaffDashboard({ bubbleCount = 15 }) {
       ))}
 
       {/* Sidebar */}
-      <div
-        style={{
-          width: sidebarOpen ? 220 : 60,
-          background: "#1f2937",
-          color: "#fff",
-          transition: "width 0.3s",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <button
-          style={{ margin: 10, background: "#374151", color: "#fff", border: "none", padding: 10, cursor: "pointer" }}
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-        >
-          ☰
-        </button>
-
-        {menuItems.map((item) => (
-          <div
-            key={item.name}
-            style={{
-              padding: 15,
-              cursor: "pointer",
-              background: activeTab === item.name ? "#111827" : "transparent",
-              display: "flex",
-              alignItems: "center",
-              gap: sidebarOpen ? 10 : 0,
-              justifyContent: sidebarOpen ? "flex-start" : "center",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-            }}
-            onClick={() => setActiveTab(item.name)}
-          >
-            <span>{item.icon}</span>
-            {sidebarOpen && <span>{item.name}</span>}
-          </div>
-        ))}
-      </div>
+      <Sidebar open={sidebarOpen} items={menuItems} active={activeTab} onToggle={() => setSidebarOpen(!sidebarOpen)} onSelect={(name) => setActiveTab(name)} />
 
       <div style={{ flex: 1, padding: 20, overflowY: "auto" }}>
         {/* Header */}
@@ -969,38 +945,15 @@ export default function StaffDashboard({ bubbleCount = 15 }) {
         {activeTab === "Dashboard" && (
           <>
             {/* Dashboard Cards */}
-            <div style={{ display: "flex", gap: "15px", marginBottom: 20, color: "#000" }}>
-              {[
+            <DashboardCards
+              cards={[
                 { title: "Upcoming Events", count: upcomingEvents.length },
                 { title: "Applied Events", count: appliedEventsList.length },
-                { title: "Payments", count: totalEarnings },
-              ].map((card) => (
-                <div
-                  key={card.title}
-                  onClick={() => setActiveTab(card.title)}
-                  style={{
-                    flex: 1,
-                    minWidth: "150px",
-                    padding: "20px",
-                    background: activeTab === card.title ? "#10b981" : "#fff",
-                    borderRadius: 8,
-                    textAlign: "center",
-                    cursor: "pointer",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    height: 120,
-                    color: activeTab === card.title ? "#fff" : "#000",
-                    transition: "0.3s"
-                  }}
-                >
-                  <div style={{ fontSize: 30, fontWeight: "bold" }}>{card.title === "Payments" ? `$${card.count}` : card.count}</div>
-                  <div style={{ fontSize: 16, marginTop: 10 }}>{card.title}</div>
-                </div>
-              ))}
-            </div>
+                { title: "Payments", value: `$${totalEarnings}` },
+              ]}
+              active={activeTab}
+              onClick={(title) => setActiveTab(title)}
+            />
           </>
         )}
 
@@ -1009,72 +962,18 @@ export default function StaffDashboard({ bubbleCount = 15 }) {
         {activeTab === "Upcoming Events" && (
           <div style={pageContainer}>
             <h2 style={title}>Upcoming Events</h2>
-
             {warning && <div style={warningBox}>{warning}</div>}
-
-            <table style={table}>
-              <thead style={thead}>
-                <tr>
-                  {["Event", "Start", "End", "Location", "Staff & Rates", "Your Application", "Action"].map(
-                    (col) => (
-                      <th key={col} style={th}>
-                        {col}
-                      </th>
-                    )
-                  )}
-                </tr>
-              </thead>
-
-              <tbody>
-                {upcomingEvents.map((event, i) => {
-                  const app = getAppForEvent(event.id);
-
-                  return (
-                    <tr key={event.id} style={{ background: i % 2 ? "#fafafa" : "#fff" }}>
-                      <td style={td}>{event.name}</td>
-                      <td style={td}>{event.startDate} {event.startTime}</td>
-                      <td style={td}>{event.endDate} {event.endTime}</td>
-                      <td style={td}>{event.location}</td>
-
-                      <td style={td}>
-                        {Object.entries(event.staff).map(([role, count]) => (
-                          <div key={role}>
-                            <b>{role}</b> ({count}) — 💰 ${roleRates[role]?.rate}{" "}
-                            <small>({roleRates[role]?.type})</small>
-                          </div>
-                        ))}
-                      </td>
-
-                      <td style={td}>
-                        {app ? (
-                          <div>
-                            ✅ Applied as <b>{app.role}</b> <br />
-                            💵 <b>${app.totalPay}</b> ({roleRates[app.role].type})
-                          </div>
-                        ) : (
-                          <span style={{ color: "#999" }}>Not Applied</span>
-                        )}
-                      </td>
-
-                      <td style={td}>
-                        {!app ? (
-                          <button onClick={() => handleApplyClick(event)} style={applyBtn}>
-                            Apply
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleCancelApplication(event.id)}
-                            style={cancelBtn}
-                          >
-                            Cancel
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            {loadingEvents && <div>Loading events…</div>}
+            {eventsError && <div style={{ color: "#b91c1c" }}>{eventsError}</div>}
+            {!loadingEvents && !eventsError && (
+              <UpcomingEventsTable
+                events={upcomingEvents}
+                roleRates={roleRates}
+                onApplyClick={handleApplyClick}
+                getAppForEvent={getAppForEvent}
+                onCancel={handleCancelApplication}
+              />
+            )}
 
             {/* Role Selection Modal */}
             {showModal && selectedEvent && (
@@ -1139,175 +1038,14 @@ export default function StaffDashboard({ bubbleCount = 15 }) {
 
         {activeTab === "Applied Events" && (
           <>
-
-            <h3 style={{ textAlign: "left", marginBottom: 10, color: "#222" }}>
-              Staff Event Application
-            </h3>
-
-            <TableAE
-              columns={[
-                "Event Name",
-                "Start Date & Time",
-                "End Date & Time",
-                "Location",
-                "Select Role",
-                "Budget",
-                "Status",
-                "Action",
-              ]}
-              data={upcomingEventsAE.map((event) => {
-                const applied = appliedEventsListAE.find((a) => a.name === event.name);
-                return {
-                  ...event,
-                  selectedRole: applied?.selectedRole || "",
-                  status: applied?.status || "Not Applied",
-                };
-              })}
-              renderRow={(event, i) => {
-                const applied = appliedEventsListAE.find((a) => a.name === event.name);
-                const isReapply = reapplyMode === event.name;
-
-                const availableRoles =
-                  applied?.status === "Rejected"
-                    ? Object.keys(event.staff).filter((r) => r !== applied.selectedRole)
-                    : Object.keys(event.staff);
-
-                return (
-                  <tr
-                    key={i}
-                    style={{
-                      background: i % 2 === 0 ? "#fff" : "#f9fafb",
-                      color: "#000",
-                    }}
-                  >
-                    <td style={tdStyleAE}>{event.name}</td>
-                    <td style={tdStyleAE}>
-                      {event.startDate} {event.startTime}
-                    </td>
-                    <td style={tdStyleAE}>
-                      {event.endDate} {event.endTime}
-                    </td>
-                    <td style={tdStyleAE}>{event.location}</td>
-
-                    {/* ROLE */}
-                    <td style={tdStyleAE}>
-                      {isReapply ? (
-                        <select
-                          defaultValue=""
-                          onChange={(e) => handleApply(event.name, e.target.value, true)}
-                          style={{
-                            padding: "6px",
-                            borderRadius: "6px",
-                            border: "1px solid #ccc",
-                            background: "#fff",
-                          }}
-                        >
-                          <option value="">-- Select Role --</option>
-                          {availableRoles.map((role) => (
-                            <option key={role} value={role}>
-                              {role}
-                            </option>
-                          ))}
-                        </select>
-                      ) : applied ? (
-                        applied.selectedRole
-                      ) : (
-                        <select
-                          defaultValue=""
-                          onChange={(e) => handleApplyAE(event.name, e.target.value, false)}
-                          style={{
-                            padding: "6px",
-                            borderRadius: "6px",
-                            border: "1px solid #ccc",
-                            background: "#fff",
-                          }}
-                        >
-                          <option value="">-- Select Role --</option>
-                          {availableRoles.map((role) => (
-                            <option key={role} value={role}>
-                              {role}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </td>
-
-                    {/* BUDGET DISPLAY FIX */}
-                    <td style={tdStyle}>
-                      {applied ? (
-                        event.budget?.[applied.selectedRole] ? (
-                          applied.selectedRole === "dj" || applied.selectedRole === "anchor" ? (
-                            `$${event.budget[applied.selectedRole]} /event`
-                          ) : (
-                            `$${event.budget[applied.selectedRole]} /hr`
-                          )
-                        ) : (
-                          "-"
-                        )
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-
-                    {/* STATUS */}
-                    <td style={tdStyleAE}>
-                      <span
-                        style={{
-                          color:
-                            applied?.status === "Approved"
-                              ? "green"
-                              : applied?.status === "Rejected"
-                                ? "red"
-                                : applied?.status === "Cancelled"
-                                  ? "gray"
-                                  : applied?.status?.includes("Pending")
-                                    ? "orange"
-                                    : "black",
-                          fontWeight: "bold",
-                        }}
-                      >
-                        {applied?.status || "Not Applied"}
-                      </span>
-                    </td>
-
-                    {/* ACTIONS */}
-                    <td style={tdStyleAE}>
-                      {applied?.status === "Applied (Pending Approval)" && (
-                        <button
-                          onClick={() => handleCancel(event.name)}
-                          style={{
-                            background: "#ff4d4d",
-                            color: "#fff",
-                            border: "none",
-                            padding: "5px 10px",
-                            borderRadius: "6px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Cancel
-                        </button>
-                      )}
-
-                      {(applied?.status === "Rejected" || applied?.status === "Cancelled") &&
-                        !isReapply && (
-                          <button
-                            onClick={() => handleReapplyClick(event.name)}
-                            style={{
-                              background: "#007bff",
-                              color: "#fff",
-                              border: "none",
-                              padding: "5px 10px",
-                              borderRadius: "6px",
-                              cursor: "pointer",
-                            }}
-                          >
-                            Reapply
-                          </button>
-                        )}
-                    </td>
-                  </tr>
-                );
-              }}
+            <h3 style={{ textAlign: "left", marginBottom: 10, color: "#222" }}>Staff Event Application</h3>
+            <AppliedEventsTable
+              data={upcomingEventsAE.map((event) => ({ ...event, applied: appliedEventsListAE.find((a) => a.name === event.name) }))}
+              onCancel={handleCancel}
+              onReapply={handleReapplyClick}
+              reapplyMode={reapplyMode}
+              onConfirmReapply={(name, role) => handleApply(name, role, true)}
+              availableRoles={(event, applied) => applied?.status === "Rejected" ? Object.keys(event.staff).filter((r) => r !== applied.selectedRole) : Object.keys(event.staff)}
             />
           </>
         )}
@@ -1337,119 +1075,22 @@ export default function StaffDashboard({ bubbleCount = 15 }) {
 
         {activeTab === "Payments" && (
           <div>
-            {/* 💰 Dynamic Total Earnings (only paid events) */}
-            <h3
-              style={{
-                textAlign: "left",
-                marginBottom: 10,
-                color: "#222",
-                fontSize: "20px",
-                fontWeight: "600",
-                letterSpacing: "0.5px",
-              }}
-            >
-              Total Earnings: $
-              {eventHistory
-                .filter((e) => e.paymentReceived)
-                .reduce((sum, e) => sum + (e.budget || 0), 0)}
+            <h3 style={{ textAlign: "left", marginBottom: 10, color: "#222", fontSize: "20px", fontWeight: "600", letterSpacing: "0.5px" }}>
+              Total Earnings: ${eventHistory.filter((e) => e.paymentReceived).reduce((sum, e) => sum + (e.budget || 0), 0)}
             </h3>
-
-
-            <Table
-              columns={[
-                "Event Name",
-                "Start",
-                "Location",
-                "Worked Role",
-                "Budget",
-                "Payment Mode",
-                "Status",
-                "Action",
-              ]}
-              data={eventHistory.map((event) => ({
+            <PaymentsTable
+              rows={eventHistory.map((event) => ({
                 event: event.name,
                 startDate: event.startDate,
                 startTime: event.startTime,
                 location: event.location,
-                workedRole: Array.isArray(event.workedRoles)
-                  ? event.workedRoles[0]
-                  : event.workedRoles || "N/A",
+                workedRole: Array.isArray(event.workedRoles) ? event.workedRoles[0] : event.workedRoles || "N/A",
                 budget: event.budget,
-                paymentMode:
-                  event.status?.toLowerCase() === "completed" &&
-                    !event.paymentReceived
-                    ? "" // leave blank until paid
-                    : event.paymentMode,
+                paymentMode: event.status?.toLowerCase() === "completed" && !event.paymentReceived ? "" : event.paymentMode,
                 status: event.status,
                 paymentReceived: event.paymentReceived,
               }))}
-              renderRow={(payment, i) => {
-                const isCompleted =
-                  payment.status?.toLowerCase() === "completed";
-                const isNotAttended =
-                  payment.status?.toLowerCase() === "not attended";
-                const isPaid = payment.paymentReceived === true;
-
-                return (
-                  <tr
-                    key={i}
-                    style={{
-                      background: i % 2 === 0 ? "#fff" : "#f9fafb",
-                      color: "#000",
-                    }}
-                  >
-                    <td style={tdStyle}>{payment.event}</td>
-                    <td style={tdStyle}>
-                      {payment.startDate} {payment.startTime}
-                    </td>
-                    <td style={tdStyle}>{payment.location}</td>
-                    <td style={tdStyle}>{payment.workedRole}</td>
-                    <td style={tdStyle}>${payment.budget}</td>
-                    <td style={tdStyle}>
-                      {payment.paymentMode || "—"}
-                    </td>
-                    <td style={tdStyle}>{payment.status}</td>
-
-                    {/* Action column */}
-                    <td style={tdStyle}>
-                      {isNotAttended ? (
-                        "—"
-                      ) : isCompleted ? (
-                        isPaid ? (
-                          <span
-                            style={{
-                              color: "green",
-                              fontWeight: "bold",
-                            }}
-                          >
-                            Paid
-                          </span>
-                        ) : (
-                          <button
-                            style={{
-                              padding: "5px 10px",
-                              background: "#007bff",
-                              color: "#fff",
-                              border: "none",
-                              borderRadius: 4,
-                              cursor: "pointer",
-                            }}
-                            onClick={() =>
-                              alert(
-                                `Payment request sent to organiser for ${payment.event}`
-                              )
-                            }
-                          >
-                            Request Payment
-                          </button>
-                        )
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                  </tr>
-                );
-              }}
+              onRequestPayment={(p) => alert(`Payment request sent to organiser for ${p.event}`)}
             />
           </div>
         )}

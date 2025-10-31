@@ -1,10 +1,12 @@
 // src/pages/StaffLogin.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { loginStaff } from "../api/api";
 import socket, { emitEvent } from "../utils/socket"; // use shared socket instance
 
-export default function StaffLogin({ go, loading, setLoading }) {
+export default function StaffLogin() {
+  const navigate = useNavigate();
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -12,6 +14,7 @@ export default function StaffLogin({ go, loading, setLoading }) {
   const [showPassword, setShowPassword] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [shake, setShake] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isValid = emailRegex.test(email.trim()) && password.trim().length > 0;
@@ -52,7 +55,7 @@ export default function StaffLogin({ go, loading, setLoading }) {
       login(data.token, data.user || { email });
       setFeedback("Login Successful ✅");
       emitEvent("staff-login", { email: data.user?.email || email });
-      go("staff-dashboard");
+      navigate("/staff", { replace: true });
     } catch (err) {
       const message = err.message || "Invalid credentials";
       setFeedback(message);
@@ -120,8 +123,8 @@ export default function StaffLogin({ go, loading, setLoading }) {
 
         <p style={{ marginTop: "16px", fontSize: "14px" }}>
           Don’t have an account?{" "}
-          <button onClick={() => go("staff-register")} style={{ background: "none", border: "none", color: "#00b894", textDecoration: "underline", cursor: "pointer" }}>Register here</button>{" "}
-          | <button onClick={() => go("landing")} style={{ background: "none", border: "none", color: "#00b894", textDecoration: "underline", cursor: "pointer" }}>Go to Landing Page 🏠</button>
+          <Link to="/staff/register" style={{ color: "#00b894", textDecoration: "underline" }}>Register here</Link>{" "}
+          | <Link to="/" style={{ color: "#00b894", textDecoration: "underline" }}>Go to Landing Page 🏠</Link>
         </p>
       </div>
 

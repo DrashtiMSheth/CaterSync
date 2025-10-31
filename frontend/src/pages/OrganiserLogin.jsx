@@ -1,16 +1,19 @@
 // src/pages/OrganiserLogin.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { loginOrganiser } from "../api/api";
 import socket, { emitEvent } from "../utils/socket"; // shared socket instance
 
-export default function OrganiserLogin({ go, loading, setLoading }) {
+export default function OrganiserLogin() {
+  const navigate = useNavigate();
   const { login } = useAuth();
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [shake, setShake] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isValid = emailRegex.test(form.email.trim()) && form.password.trim().length > 0;
@@ -56,7 +59,7 @@ export default function OrganiserLogin({ go, loading, setLoading }) {
       setFeedback("Login Successful ✅");
 
       emitEvent("organiser-login", { email: data.user?.email || form.email });
-      go("organiser-dashboard");
+      navigate("/organiser", { replace: true });
     } catch (err) {
       const msg = (err.message || "Invalid credentials").toLowerCase();
       setShake(true);
@@ -130,8 +133,8 @@ export default function OrganiserLogin({ go, loading, setLoading }) {
 
         <p style={{ marginTop: "16px", fontSize: "14px" }}>
           Don’t have an account?{" "}
-          <button onClick={() => go("organiser-register")} style={{ background: "none", border: "none", color: "#00b894", textDecoration: "underline", cursor: "pointer" }}>Register here</button>{" "}
-          | <button onClick={() => go("landing")} style={{ background: "none", border: "none", color: "#00b894", textDecoration: "underline", cursor: "pointer" }}>Go to Landing Page 🏠</button>
+          <Link to="/organiser/register" style={{ color: "#00b894", textDecoration: "underline" }}>Register here</Link>{" "}
+          | <Link to="/" style={{ color: "#00b894", textDecoration: "underline" }}>Go to Landing Page 🏠</Link>
         </p>
       </div>
 

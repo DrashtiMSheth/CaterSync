@@ -4,7 +4,15 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import axios from "axios";
 import socket from "../utils/socket";
-import { getEvents, getAllStaff } from "../api/api";
+import { getEvents, getAllStaff, getOrganiserProfile } from "../api/api";
+import CurrentEventsTable from "../components/organiser/CurrentEventsTable";
+import EventHistoryTable from "../components/organiser/EventHistoryTable";
+import Sidebar from "../components/common/Sidebar";
+import NotificationsModal from "../components/common/NotificationsModal";
+import DashboardCards from "../components/common/DashboardCards";
+import StaffDirectory from "../components/organiser/StaffDirectory";
+import StaffDetailModal from "../components/organiser/StaffDetailModal";
+import PaymentModal from "../components/organiser/PaymentModal";
 
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -308,6 +316,8 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [events, setEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState("");
   // const [staff] = useState(initialStaff);
   const [bubbles, setBubbles] = useState([]);
   const [showCreatePage, setShowCreatePage] = useState(true);
@@ -333,6 +343,8 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
   //  const [editingEvent, setEditingEvent] = useState(null);
   const [applications, setApplications] = useState([]); // holds staff applications
   const [staff, setStaff] = useState([]); // fetched via API instead of static list
+  const [staffLoading, setStaffLoading] = useState(true);
+  const [staffError, setStaffError] = useState("");
   // const [colorMode, setColorMode] = useState(false);
   const [activeSpecialRole, setActiveSpecialRole] = useState(null);
 
@@ -531,15 +543,21 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
         const token = localStorage.getItem("organiserToken");
         const staffRes = await getAllStaff(token);
         setStaff(staffRes?.staff || staffRes || []);
+        setStaffLoading(false);
       } catch (e) {
         console.error("Failed to fetch staff", e);
+        setStaffError(e?.message || "Failed to load staff");
+        setStaffLoading(false);
       }
       try {
         const token = localStorage.getItem("organiserToken");
         const eventsRes = await getEvents(token);
         setEvents(eventsRes?.events || eventsRes || []);
+        setEventsLoading(false);
       } catch (e) {
         console.error("Failed to fetch events", e);
+        setEventsError(e?.message || "Failed to load events");
+        setEventsLoading(false);
       }
     })();
 
@@ -584,19 +602,7 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
   }, []);
 
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const token = localStorage.getItem("organiserToken");
-        const res = await getEvents(token);
-        setEvents(res?.events || res || []);
-      } catch (err) {
-        console.error("Failed to fetch events", err);
-      }
-    };
-
-    fetchEvents();
-  }, []);
+  // dedup extra fetch
 
 
   const handleSearchLocation = async () => {
@@ -870,28 +876,19 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:5050/api/organiser/profile", {
-          headers: { Authorization: `Bearer ${token}` },
+        const token = localStorage.getItem("organiserToken");
+        const data = await getOrganiserProfile(token);
+        const org = data.organiser || data;
+        setForme({
+          companyLogo: org.companyLogo || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+          fullName: org.fullName || "",
+          email: org.email || "",
+          phone: org.phone || "",
+          organiserName: org.organiserName || "",
+          businessType: org.businessType || "",
+          officeAddress: org.officeAddress || "",
+          website: org.website || "",
         });
-        const data = await res.json();
-
-        if (data.success) {
-          setForme({
-            companyLogo:
-              data.organiser.companyLogo ||
-              "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-            fullName: data.organiser.fullName || "",
-            email: data.organiser.email || "",
-            phone: data.organiser.phone || "",
-            organiserName: data.organiser.organiserName || "",
-            businessType: data.organiser.businessType || "",
-            officeAddress: data.organiser.officeAddress || "",
-            website: data.organiser.website || "",
-          });
-        } else {
-          console.error("Failed to load profile:", data.message);
-        }
       } catch (err) {
         console.error("Error fetching organiser profile:", err);
       }
@@ -973,14 +970,7 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
 
 
       {/* Sidebar */}
-      <div style={{ width: sidebarOpen ? 220 : 60, background: "#1f2937", color: "#fff", transition: "width 0.3s", display: "flex", flexDirection: "column", zIndex: 2 }}>
-        <button style={{ margin: 10, background: "#374151", color: "#fff", border: "none", padding: 10, cursor: "pointer" }} onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
-        {menuItems.map(item => (<div key={item.name} onClick={() => { setActiveTab(item.name); setShowCreatePage(false) }} style={{
-          padding: 15, cursor: "pointer",
-          background: activeTab === item.name ? "#111827" : "transparent",
-          display: "flex", alignItems: "center", gap: sidebarOpen ? 10 : 0, justifyContent: sidebarOpen ? "flex-start" : "center", whiteSpace: "nowrap", overflow: "hidden", transition: "background 0.3s" // optional: smooth effect
-        }}><span>{item.icon}</span>{sidebarOpen && <span>{item.name}</span>}</div>))}
-      </div>
+      <Sidebar open={sidebarOpen} items={menuItems} active={activeTab} onToggle={() => setSidebarOpen(!sidebarOpen)} onSelect={(name) => { setActiveTab(name); setShowCreatePage(false); }} />
 
       {/* Main */}
       <div style={{ flex: 1, padding: 20, background: "rgba(255,255,255,0.9)", overflowY: "scroll", zIndex: 1, color: "#000" }}>
@@ -1173,95 +1163,26 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
         ));
       })()}
     </div> */}
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20, gap: "15px" }}>
-              {[
+            <DashboardCards
+              cards={[
                 { title: "Current Events", count: 4 },
                 { title: "Event History", count: 2 },
-                { title: "Staff List", count: 3 }
-              ].map((card) => (
-                <div
-                  key={card.title}
-                  onClick={() => setActiveTab(card.title)}
-                  style={{
-                    flex: 1,
-                    minWidth: "150px",
-                    padding: "20px",
-                    background: activeTab === card.title ? "#10b981" : "#fff",
-                    borderRadius: 8,
-                    textAlign: "center",
-                    cursor: "pointer",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    height: 120,
-                    color: activeTab === card.title ? "#fff" : "#000",
-                    transition: "0.3s"
-                  }}
-                >
-                  <div style={{ fontSize: 30, fontWeight: "bold" }}>{card.count}</div>
-                  <div style={{ fontSize: 16, marginTop: 10 }}>{card.title}</div>
-                </div>
-              ))}
-            </div>
+                { title: "Staff List", count: 3 },
+              ]}
+              active={activeTab}
+              onClick={(title) => setActiveTab(title)}
+            />
             <button onClick={() => setShowCreatePage(true)} style={{ padding: "10px 20px", background: "#10b981", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer", marginBottom: 20 }}>+ Create New Event</button>
           </>
         )}
 
         {activeTab === "Current Events" && (
-          <div style={{ padding: 20 }}>
-            <h2>Current / Upcoming Events</h2>
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 700 }}>
-                <thead>
-                  <tr>
-                    <th style={currentEventsThStyle}>Name</th>
-                    <th style={currentEventsThStyle}>Start</th>
-                    <th style={currentEventsThStyle}>End</th>
-                    <th style={currentEventsThStyle}>Location</th>
-                    <th style={currentEventsThStyle}>Staff & Budget</th>
-                    <th style={currentEventsThStyle}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedEventss.map((event) => {
-                    const start = new Date(event.startDateTime);
-                    const end = new Date(event.endDateTime);
-                    const isCurrent = start <= now && end >= now;
-                    const editable = !isCurrent && isEditable(event);
-
-                    return (
-                      <tr key={event.id} style={{ backgroundColor: isCurrent ? "#d1fae5" : "transparent" }}>
-                        <td style={currentEventsTdStyle}>{event.name}</td>
-                        <td style={currentEventsTdStyle}>{formatDateTimee(event.startDateTime)}</td>
-                        <td style={currentEventsTdStyle}>{formatDateTimee(event.endDateTime)}</td>
-                        <td style={currentEventsTdStyle}>{event.location}</td>
-                        <td style={currentEventsTdStyle}>
-                          {Object.entries(event.staff).map(([role, data]) => {
-                            const assigned = data.male + data.female;
-                            const required = data.required || assigned;
-                            return (
-                              <div key={role} style={{ marginBottom: 6 }}>
-                                <div>{role}: {assigned} assigned ({calculateStaffBudgett(data)}$)</div>
-                                <ProgressBar assigned={assigned} required={required} />
-                              </div>
-                            );
-                          })}
-                          {event.extraExpenses > 0 && <div>Extra: {event.extraExpenses}$</div>}
-                        </td>
-                        <td style={currentEventsTdStyle}>
-                          {editable && (
-                            <button style={currentEventsButtonStyle(false)} onClick={() => setEditingEvents(eventss)}>Edit</button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
+          <>
+            {eventsLoading && <div style={{ padding: 12 }}>Loading events…</div>}
+            {eventsError && <div style={{ padding: 12, color: "red" }}>{eventsError}</div>}
+            {!eventsLoading && !eventsError && (
+              <CurrentEventsTable now={now} events={events} onEdit={(e) => setEditingEvents(e)} />
+            )}
             {editingEvents && (
               <div
                 style={{
@@ -1573,70 +1494,11 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
                 </div>
               </div>
             )}
-          </div>
+          </>
         )}
 
         {activeTab === "Event History" && (
-          <div>
-            <input
-              type="text"
-              placeholder="Search by name, staff role, or date..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ padding: "8px", width: "300px", marginBottom: "10px", borderRadius: "6px", border: "1px solid #ccc" }}
-            />
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 900 }}>
-                <thead>
-                  <tr>
-                    <th style={thStyle} onClick={() => handleSort("name")}>
-                      Name {sortConfig.key === "name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
-                    </th>
-                    <th style={thStyle} onClick={() => handleSort("startDateTime")}>
-                      Start {sortConfig.key === "startDateTime" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
-                    </th>
-                    <th style={thStyle} onClick={() => handleSort("endDateTime")}>
-                      End {sortConfig.key === "endDateTime" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
-                    </th>
-                    <th style={thStyle}>Location</th>
-                    <th style={thStyle}>Staff & Budget</th>
-                    <th style={thStyle}>Extra Expenses</th>
-                    <th style={thStyle}>Status</th>
-                    <th style={thStyle}>All Payments Made</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredEventss.length > 0 ? (
-                    filteredEventss.map((event) => (
-                      <tr key={event.id}>
-                        <td style={tdStyle}>{event.name}</td>
-                        <td style={tdStyle}>{formatDateTime(event.startDateTime)}</td>
-                        <td style={tdStyle}>{formatDateTime(event.endDateTime)}</td>
-                        <td style={tdStyle}>{event.location}</td>
-                        <td style={tdStyle}>
-                          {Object.entries(event.staff).map(([role, data]) => (
-                            <div key={role}>
-                              {role}: {data.male + data.female} ({calculateStaffBudget(data)}$) {data.paid ? "✅" : "❌"}
-                            </div>
-                          ))}
-                        </td>
-                        <td style={tdStyle}>
-                          {event.extraExpenses > 0 ? `${event.extraExpenses}$ ${event.extraPaid ? "✅" : "❌"}` : "-"}
-                        </td>
-                        <td style={tdStyle}>{event.status || "Completed"}</td>
-                        <td style={tdStyle}>{isAllPaid(event) ? "✅ Paid" : "❌ Pending"}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td style={tdStyle} colSpan={8}>No events found</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
+          <EventHistoryTable events={events} />
         )}
 
 
@@ -1645,7 +1507,7 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
         {activeTab === "Staff List" && (
           <div style={{ padding: 20, fontFamily: "Arial, sans-serif" }}>
             <h2>Staff List</h2>
-            <StaffDirectoryUnique staffList={staffRecords} onSelect={setSelectedStaffId} />
+            <StaffDirectory staffList={staffRecords} onSelect={setSelectedStaffId} />
 
             <StaffDetailModal
               staff={selectedStaff}
@@ -1657,7 +1519,7 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
               onPay={handleOpenPayment}
             />
 
-            <PaymentModalUnique
+            <PaymentModal
               open={paymentModalState.open}
               event={selectedEvents[paymentModalState.eventIdx]}
               onClose={() => setPaymentModalState({ open: false, eventIdx: null })}
@@ -2040,39 +1902,13 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
       )} */}
 
       {/* Notifications modal */}
-      {showDropdown && (
-        <div
-          onClick={() => setShowDropdown(false)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", color: "#000", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{ width: "90%", maxWidth: 480, maxHeight: "80vh", overflowY: "auto", background: "#fff", borderRadius: 12, boxShadow: "0 10px 30px rgba(0,0,0,0.4)", padding: 16 }}
-          >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <h3 style={{ margin: 0 }}>Notifications</h3>
-              <button onClick={() => setShowDropdown(false)} style={{ background: "#ef4444", color: "#fff", border: "none", padding: "6px 10px", borderRadius: 6, cursor: "pointer" }}>Close</button>
-            </div>
-            {notifications.length === 0 ? (
-              <div style={{ padding: 10, textAlign: "center" }}>No notifications</div>
-            ) : (
-              <div>
-                {notifications.map(n => (
-                  <div key={n.id} style={{ padding: "10px", borderBottom: "1px solid #eee" }}>
-                    <div style={{ fontSize: 14, marginBottom: 6 }}>{n.message}</div>
-                    {n.type === "apply" && (
-                      <div style={{ display: "flex", gap: 10 }}>
-                        <button onClick={() => handleAccept(n.id)} style={{ background: "#10b981", color: "#fff", border: "none", padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>Accept</button>
-                        <button onClick={() => handleReject(n.id)} style={{ background: "#ef4444", color: "#fff", border: "none", padding: "4px 8px", borderRadius: 4, cursor: "pointer" }}>Reject</button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <NotificationsModal
+        open={showDropdown}
+        notifications={notifications}
+        onClose={() => setShowDropdown(false)}
+        onAccept={handleAccept}
+        onReject={handleReject}
+      />
 
       {/* Bubble animation */}
       <style>{`

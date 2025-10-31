@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function LandingPage({
-  go,
   logo = "🔗 CaterSync",
   title = "CaterSync — Where Organisers and Staff Work in Perfect Sync",
   subtitle = "From chaos to coordination — bringing organisers and staff together through code.",
@@ -9,6 +9,7 @@ export default function LandingPage({
   staffBtnLabel = "👨‍🍳 Staff Entrance",
   footerText,
 }) {
+  const navigate = useNavigate();
   // Floating bubbles
   const bubbles = useMemo(() => {
     return Array.from({ length: 8 }, () => ({
@@ -47,14 +48,14 @@ export default function LandingPage({
         <div className="entrances" style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", marginBottom: 24 }}>
           <button
             className="entry btn-organiser"
-            onClick={() => go("organiser-login")}
+            onClick={() => navigate("/organiser/login")}
             style={{ padding: "12px 24px", borderRadius: "8px", background: "#00b894", border: "none", color: "#fff", fontWeight: "bold", cursor: "pointer", transition: "0.3s" }}
           >
             {organiserBtnLabel}
           </button>
           <button
             className="entry btn-staff"
-            onClick={() => go("staff-login")}
+            onClick={() => navigate("/staff/login")}
             style={{ padding: "12px 24px", borderRadius: "8px", background: "#6c5ce7", border: "none", color: "#fff", fontWeight: "bold", cursor: "pointer", transition: "0.3s" }}
           >
             {staffBtnLabel}
