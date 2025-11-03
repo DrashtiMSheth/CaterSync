@@ -10,9 +10,11 @@ import EventHistoryTable from "../components/organiser/EventHistoryTable";
 import Sidebar from "../components/common/Sidebar";
 import NotificationsModal from "../components/common/NotificationsModal";
 import DashboardCards from "../components/common/DashboardCards";
+import ProgressBar from "../components/common/ProgressBar";
 import StaffDirectory from "../components/organiser/StaffDirectory";
 import StaffDetailModal from "../components/organiser/StaffDetailModal";
 import PaymentModal from "../components/organiser/PaymentModal";
+import ToastStack from "../components/common/ToastStack";
 
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -62,149 +64,6 @@ function LocationSelector({ form, setForm }) {
   return null;
 }
 
-// ---------- Star Rating Component ----------
-function StarRatingUnique({ eventIdx, ratingMap, setRatingMap }) {
-  const ratingValue = ratingMap[eventIdx] || 0;
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-      {[1, 2, 3, 4, 5].map(starNum => (
-        <span
-          key={`star-${eventIdx}-${starNum}`}
-          onClick={() => setRatingMap(prev => ({ ...prev, [eventIdx]: starNum }))}
-          style={{ cursor: "pointer", color: starNum <= ratingValue ? "#f59e0b" : "#d1d5db", fontSize: 20 }}
-        >
-          ★
-        </span>
-      ))}
-    </div>
-  );
-}
-
-// ---------- Payment Modal Component ----------
-function PaymentModalUnique({ open, event, onClose, onSubmit }) {
-  if (!open || !event) return null;
-
-  return (
-    <div style={{
-      position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-      background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 999
-    }}>
-      <div style={{ background: "#fff", padding: 20, borderRadius: 8, maxWidth: 400, width: "90%", boxShadow: "0 4px 20px rgba(0,0,0,0.2)" }}>
-        <h3>Confirm Payment</h3>
-        <div style={{ marginBottom: 10 }}>Amount: ${event.eventAmount}</div>
-        <div style={{ marginBottom: 10 }}>
-          <label>Payment Mode: </label><br />
-          <select id="payment-mode-unique" style={{ width: "100%", padding: 8, marginTop: 5 }}>
-            <option value="Cash">Cash</option>
-            <option value="UPI">UPI</option>
-            <option value="Card">Card</option>
-          </select>
-        </div>
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-          <button onClick={onClose} style={{ padding: "6px 12px", background: "#ef4444", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer" }}>Cancel</button>
-          <button onClick={() => onSubmit(document.getElementById("payment-mode-unique").value)} style={{ padding: "4px 8px", background: "#f59e0b", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>Confirm Pay</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------- Staff Detail Modal Component ----------
-function StaffDetailModal({ staff, events, ratingMap, setRatingMap, onClose, onRate, onPay }) {
-  if (!staff) return null;
-
-  // Real-time overall rating calculation
-  const ratedEvents = events.filter(e => e.ratedByOrg || ratingMap[events.indexOf(e)]);
-  const overallRating = ratedEvents.length
-    ? Math.round(
-      ratedEvents.reduce((sum, e, idx) => sum + (e.ratedByOrg ? e.eventRate : ratingMap[idx] || 0), 0)
-      / ratedEvents.length
-    )
-    : "Not Rated Yet";
-
-  return (
-    <div style={{
-      position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-      background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 999
-    }}>
-      <div style={{ background: "#fff", padding: 20, borderRadius: 8, maxWidth: 800, width: "90%", maxHeight: "80%", overflowY: "auto", boxShadow: "0 4px 20px rgba(0,0,0,0.2)" }}>
-        <h3>{staff.staffName} Details</h3>
-        <div style={{ marginBottom: 15 }}>
-          <strong>Overall Rating: </strong>{overallRating}{ratedEvents.length ? " ⭐" : ""}
-        </div>
-
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Event Name</th>
-              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Role</th>
-              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Amount</th>
-              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Rate</th>
-              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Payment Mode</th>
-              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Transaction ID</th>
-              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Status</th>
-              <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.map((eventItem, idx) => (
-              <tr key={`event-row-${staff.staffId}-${idx}`} style={{
-                borderBottom: "1px solid #eee",
-                backgroundColor: !eventItem.paidStatus ? "#fff7e6" : !eventItem.ratedByOrg ? "#e6f7ff" : "transparent"
-              }}>
-                <td style={{ padding: 10 }}>{eventItem.eventName}</td>
-                <td style={{ padding: 10 }}>{eventItem.eventRole}</td>
-                <td style={{ padding: 10 }}>${eventItem.eventAmount}</td>
-                <td style={{ padding: 10 }}>{eventItem.ratedByOrg ? `${eventItem.eventRate} ⭐` : ratingMap[idx] ? `${ratingMap[idx]} ⭐` : "—"}</td>
-                <td style={{ padding: 10 }}>{eventItem.paymentMethod || "—"}</td>
-                <td style={{ padding: 10 }}>{eventItem.txnId || "—"}</td>
-                <td style={{ padding: 10 }}>{eventItem.paidStatus ? <span style={{ color: "green", fontWeight: "bold" }}>Paid</span> : <span style={{ color: "orange" }}>Pending</span>}</td>
-                <td style={{ padding: 10, display: "flex", gap: 5, alignItems: "center" }}>
-                  {!eventItem.ratedByOrg && <>
-                    <StarRatingUnique eventIdx={idx} ratingMap={ratingMap} setRatingMap={setRatingMap} />
-                    <button onClick={() => onRate(idx)} style={{ padding: "4px 8px", background: "#10b981", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", marginLeft: 5 }}>Rate</button>
-                  </>}
-                  {!eventItem.paidStatus && <button onClick={() => onPay(idx)} style={{ padding: "4px 8px", background: "#f59e0b", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", marginLeft: 5 }}>Pay</button>}
-                  {eventItem.paidStatus && <span style={{ color: "green", fontWeight: "bold" }}>✔</span>}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <button onClick={onClose} style={{ padding: "6px 12px", background: "#ef4444", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer", marginTop: 15 }}>Close</button>
-      </div>
-    </div>
-  );
-}
-
-// ---------- Staff Directory Component ----------
-function StaffDirectoryUnique({ staffList, onSelect }) {
-  return (
-    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-      <thead>
-        <tr>
-          <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Staff Name</th>
-          <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Email</th>
-          <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>Contact</th>
-          <th style={{ padding: 10, textAlign: "left", borderBottom: "1px solid #ccc" }}>View</th>
-        </tr>
-      </thead>
-      <tbody>
-        {staffList.map(staff => (
-          <tr key={`staff-row-${staff.staffId}`} style={{ borderBottom: "1px solid #eee" }}>
-            <td style={{ padding: 10 }}>{staff.staffName}</td>
-            <td style={{ padding: 10 }}>{staff.staffEmail}</td>
-            <td style={{ padding: 10 }}>{staff.staffContact}</td>
-            <td style={{ padding: 10 }}>
-              <button onClick={() => onSelect(staff.staffId)} style={{ padding: "6px 12px", background: "#3b82f6", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer" }}>View</button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
 
 
 export default function OrganiserDashboard({ bubbleCount = 25 }) {
@@ -296,22 +155,7 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
     cursor: disabled ? "not-allowed" : "pointer",
   });
 
-  // Progress bar component
-  const ProgressBar = ({ assigned, required }) => {
-    const percentage = required ? Math.min((assigned / required) * 100, 100) : 0;
-    let color = "#ef4444"; // red
-    if (percentage === 100) color = "#16a34a"; // green
-    else if (percentage > 0) color = "#facc15"; // yellow
-
-    return (
-      <div style={{ marginTop: 4 }}>
-        <div style={{ fontSize: 12 }}>{assigned}/{required}</div>
-        <div style={{ background: "#e5e7eb", borderRadius: 6, height: 12, width: "100%" }}>
-          <div style={{ width: `${percentage}%`, background: color, height: "100%", borderRadius: 6 }} />
-        </div>
-      </div>
-    );
-  };
+  // ProgressBar moved to shared component
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -330,6 +174,7 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
     { id: 5, type: "rating", message: "C rated your organisation ⭐ 3", staff: "Bob", status: "info", createdAt: Date.now() - 1000 * 60 * 30 },
  ]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [toasts, setToasts] = useState([]);
   // const [showProfilePreview, setShowProfilePreview] = useState(false);
   // const [searchQuery, setSearchQuery] = useState("");
   const [staffRatings, setStaffRatings] = useState([]);
@@ -574,6 +419,10 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
         { id: Date.now(), type: "apply", message: `${data.staffName} applied for ${data.eventName}`, status: "pending", createdAt: Date.now() },
         ...prev,
       ]);
+      setToasts(prev => ([
+        ...prev,
+        { id: Date.now(), type: "info", title: "New application", message: `${data.staffName || "A staff"} applied for an event` }
+      ]));
     });
 
     socket.on("staffCancelled", (data) => {
@@ -582,6 +431,10 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
         { id: Date.now(), type: "cancel", message: `${data.staffName} cancelled their application`, status: "info", createdAt: Date.now() },
         ...prev,
       ]);
+      setToasts(prev => ([
+        ...prev,
+        { id: Date.now(), type: "info", title: "Application cancelled", message: `${data.staffName || "A staff"} cancelled their application` }
+      ]));
     });
 
     socket.on("eventUpdated", (data) => {
@@ -915,17 +768,17 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
   // ---------- Save organiser profile ----------
   const handleProfileSave = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("organiserToken");
 
       const formData = new FormData();
       Object.entries(setForme).forEach(([key, value]) => {
         formData.append(key, value);
       });
 
-      const res = await fetch("http://localhost:5050/api/organiser/profile", {
+      const res = await fetch(`${process.env.REACT_APP_API_URL || "http://localhost:5050/api"}/organiser/profile`, {
         method: "PUT",
         headers: {
-          Authorization: `Bearer ${token}`,
+          "x-auth-token": token,
         },
         body: formData,
       });
@@ -935,7 +788,7 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
         alert("Profile updated successfully!");
         setForme(data.organiser);
       } else {
-        alert("Failed to update profile");
+        alert(data.message || "Failed to update profile");
       }
     } catch (err) {
       console.error("Error updating organiser profile:", err);
@@ -1909,6 +1762,8 @@ export default function OrganiserDashboard({ bubbleCount = 25 }) {
         onAccept={handleAccept}
         onReject={handleReject}
       />
+
+      <ToastStack toasts={toasts} onClose={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
 
       {/* Bubble animation */}
       <style>{`

@@ -123,6 +123,27 @@ npm start
 - Backend CORS allows `http://localhost:3000` and `x-auth-token` headers for dev.
 - Frontend uses `REACT_APP_API_URL` as API base; falls back to `http://localhost:5050/api`.
 
+### 🔔 Realtime Events
+- Server emits Socket.io events:
+  - `staffApplied` (to organiser room) when a staff applies
+  - `staffCancelled` (to organiser room) when a staff cancels
+  - `notification` generic messages; clients can subscribe
+- Client joins personal room on login (`joinRoom` with `userId`)
+- Organiser dashboard listens and updates notifications immediately
+
+### 🗝️ Backend .env example
+```
+PORT=5050
+MONGO_URI=mongodb://localhost:27017/catersync
+JWT_SECRET=replace_with_strong_secret
+FE_ORIGIN=http://localhost:3000
+```
+
+### ❓ Common Issues
+- 401/403: ensure `x-auth-token` header is present for protected routes.
+- CORS blocked: confirm `FE_ORIGIN` matches your frontend URL.
+- WebSocket fails: verify backend port and that client `REACT_APP_API_URL` points to the same host (without `/api` for sockets).
+
 ### 🧱 Project Structure (excerpt)
 ```
 frontend/src/

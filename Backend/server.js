@@ -9,6 +9,7 @@ const path = require("path");
 
 // Routes
 const organiserRoutes = require("./routes/organiserRoutes");
+const eventRoutes = require("./routes/eventRoutes");
 const staffRoutes = require("./routes/staffRoutes");
 const authRoutes = require("./routes/authRoutes");
 const otpRoutes = require("./routes/otpRoutes");
@@ -47,15 +48,6 @@ app.use(
 // ✅ Serve static files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ API Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/organiser", organiserRoutes);
-app.use("/api/staff", staffRoutes);
-app.use("/api/otp", otpRoutes);
-
-// ✅ Error Handling Middleware
-app.use(errorHandler);
-
 // ✅ Socket.io Setup
 const io = new Server(server, {
   cors: {
@@ -67,6 +59,19 @@ const io = new Server(server, {
 
 app.set("io", io);
 global.io = io;
+
+// ✅ Attach io instance to each request for controllers to emit
+app.use((req, res, next) => { req.io = io; next(); });
+
+// ✅ API Routes (mounted after io is available on req)
+app.use("/api/auth", authRoutes);
+app.use("/api/organiser", organiserRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/staff", staffRoutes);
+app.use("/api/otp", otpRoutes);
+
+// ✅ Error Handling Middleware
+app.use(errorHandler);
 
 io.on("connection", (socket) => {
   console.log("🟢 WebSocket connected:", socket.id);

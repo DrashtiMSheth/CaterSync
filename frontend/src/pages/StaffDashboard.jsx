@@ -9,7 +9,7 @@ import DashboardCards from "../components/common/DashboardCards";
 import UpcomingEventsTable from "../components/staff/UpcomingEventsTable";
 import AppliedEventsTable from "../components/staff/AppliedEventsTable";
 import PaymentsTable from "../components/staff/PaymentsTable";
-import { getStaffProfile, getEvents } from "../api/api";
+import { getStaffProfile, getStaffAvailableEvents, staffApplyForEvent, staffCancelApplication } from "../api/api";
 
 // Fix default marker icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -106,7 +106,19 @@ useEffect(() => {
     }
     try {
       const token = localStorage.getItem("staffToken");
-      await getEvents(token); // backend list; integrate mapping as needed
+      const res = await getStaffAvailableEvents(token);
+      const list = (res?.events || []).map(ev => ({
+        id: ev._id,
+        name: ev.name,
+        startDate: (ev.startDateTime || "").split("T")[0] || "",
+        startTime: (ev.startDateTime || "").split("T")[1]?.slice(0,5) || "",
+        endDate: (ev.endDateTime || "").split("T")[0] || "",
+        endTime: (ev.endDateTime || "").split("T")[1]?.slice(0,5) || "",
+        location: ev.location?.address || "",
+        staff: ev.staff || {},
+        status: ev.status || "Open",
+      }));
+      setUpcomingEvents(list);
       setLoadingEvents(false);
     } catch (err) {
       setEventsError(err?.message || "Failed to load events");
@@ -118,21 +130,21 @@ useEffect(() => {
   // Save profile updates
   const handleProfileSave = async () => {
   try {
-    const token = localStorage.getItem("token");
-    const res = await fetch("http://localhost:5050/api/staff/profile", {
+    const token = localStorage.getItem("staffToken");
+    const res = await fetch(`${process.env.REACT_APP_API_URL || "http://localhost:5050/api"}/staff/profile`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        "x-auth-token": token,
       },
       body: JSON.stringify(profile),
     });
     const data = await res.json();
     if (data.success) {
       alert("Profile updated successfully!");
-      setProfile(data.staff);
+      setProfile(data.staff || profile);
     } else {
-      alert("Failed to update profile");
+      alert(data.message || "Failed to update profile");
     }
   } catch (err) {
     console.error("Error updating profile:", err);
@@ -177,31 +189,8 @@ useEffect(() => {
       : 0;
 
 
-  // ---------- Sample Event Data ----------
-  const [upcomingEvents] = useState([
-    {
-      id: 1,
-      name: "Wedding Reception",
-      startDate: "2025-11-05",
-      startTime: "18:00",
-      endDate: "2025-11-05",
-      endTime: "23:00",
-      location: "Banquet Hall A",
-      staff: { Waiter: 5, Chef: 2, DJ: 1 },
-      status: "Open",
-    },
-    {
-      id: 2,
-      name: "Corporate Dinner",
-      startDate: "2025-11-07",
-      startTime: "19:00",
-      endDate: "2025-11-07",
-      endTime: "22:00",
-      location: "Conference Hall B",
-      staff: { Waiter: 3, Cleaner: 2, Anchor: 1 },
-      status: "Open",
-    },
-  ]);
+  // ---------- Upcoming Events (from backend) ----------
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
 
   // ---------- Role Rates ----------
   const roleRates = {
@@ -256,7 +245,7 @@ useEffect(() => {
   };
 
   // ---------- Confirm Apply ----------
-  const handleConfirmApply = () => {
+  const handleConfirmApply = async () => {
     if (!selectedRole) {
       setWarning("⚠️ Please select a role before applying!");
       return;
@@ -277,23 +266,36 @@ useEffect(() => {
       totalPay = rateData.rate;
     }
 
-    setApplications([
-      ...applications,
-      {
-        eventId: selectedEvent.id,
-        role: selectedRole,
-        status: "Pending",
-        totalPay: totalPay.toFixed(2),
-      },
-    ]);
+    try {
+      const token = localStorage.getItem("staffToken");
+      await staffApplyForEvent(selectedEvent.id, token);
+      setApplications([
+        ...applications,
+        {
+          eventId: selectedEvent.id,
+          role: selectedRole,
+          status: "Pending",
+          totalPay: totalPay.toFixed(2),
+        },
+      ]);
+    } catch (e) {
+      alert(e.message || "Failed to apply");
+      return;
+    }
 
     setShowModal(false);
     setWarning("");
   };
 
   // ---------- Cancel ----------
-  const handleCancelApplication = (eventId) => {
-    setApplications(applications.filter((a) => a.eventId !== eventId));
+  const handleCancelApplication = async (eventId) => {
+    try {
+      const token = localStorage.getItem("staffToken");
+      await staffCancelApplication(eventId, token);
+      setApplications(applications.filter((a) => a.eventId !== eventId));
+    } catch (e) {
+      alert(e.message || "Failed to cancel");
+    }
   };
 
 

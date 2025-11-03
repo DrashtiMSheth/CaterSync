@@ -77,8 +77,24 @@ export const getStaffProfile = (token) =>
 export const registerOrganiser = (formData) =>
   request(`${BASE}/organiser/register`, { method: "POST", body: formData });
 
-export const sendOtp = (data) =>
-  request(`${BASE}/otp/send-otp`, { method: "POST", body: data });
+// export const sendOtp = (data) =>
+//   request(`${BASE}/otp/send-otp`, { method: "POST", body: data });
+
+export const sendOtp = async (phone) => {
+  try {
+    const res = await fetch(`${BASE}/otp/send-otp`, {  // ✅ correct endpoint
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone }),
+    });
+
+    if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error("OTP Error:", err);
+    throw err;
+  }
+};
 
 export const loginOrganiser = (credentials) =>
   request(`${BASE}/auth/organiser/login`, { method: "POST", body: credentials });
@@ -123,6 +139,16 @@ export const updateEvent = (id, data, token) =>
 
 export const deleteEvent = (id, token) =>
   request(`${BASE}/events/${id}`, { method: "DELETE", headers: buildHeaders(token) });
+
+// Staff-facing events and applications
+export const getStaffAvailableEvents = (token) =>
+  request(`${BASE}/events/staff`, { headers: buildHeaders(token) });
+
+export const staffApplyForEvent = (eventId, token) =>
+  request(`${BASE}/events/staff/apply`, { method: "POST", body: { eventId }, headers: buildHeaders(token) });
+
+export const staffCancelApplication = (eventId, token) =>
+  request(`${BASE}/events/staff/apply`, { method: "DELETE", body: { eventId }, headers: buildHeaders(token) });
 
 /** ======================= Feedback / Ratings ======================= */
 export const submitFeedback = (eventId, data, token) =>

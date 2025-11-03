@@ -24,6 +24,11 @@ export const AuthProvider = ({ children }) => {
     if (userData?.email) {
       socket.emit("user-login", { email: userData.email, role: userData.role });
     }
+    // Join personal room for targeted notifications
+    const userId = userData?.id || userData?._id;
+    if (userId) {
+      socket.emit("joinRoom", { userId });
+    }
   };
 
   const logout = () => {

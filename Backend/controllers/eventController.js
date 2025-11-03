@@ -72,8 +72,30 @@ exports.applyForEvent = async (req, res, next) => {
     await event.save();
 
     req.io.to(event.organiser.toString()).emit("notification", { type: "newApplication", eventId, staffId: req.user.id });
+    req.io.to(event.organiser.toString()).emit("staffApplied", { eventId, staffId: req.user.id });
 
     res.json({ success: true, message: "Applied successfully", event });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.cancelApplication = async (req, res, next) => {
+  try {
+    if (req.user.role !== "staff") return next({ statusCode: 403, message: "Unauthorized" });
+
+    const { eventId } = req.body;
+    const event = await Event.findById(eventId);
+    if (!event) return next({ statusCode: 404, message: "Event not found" });
+
+    const before = event.applications.length;
+    event.applications = event.applications.filter(a => a.staff.toString() !== req.user.id);
+    if (event.applications.length === before) return next({ statusCode: 400, message: "No existing application to cancel" });
+    await event.save();
+
+    req.io.to(event.organiser.toString()).emit("staffCancelled", { eventId, staffId: req.user.id });
+
+    res.json({ success: true, message: "Application cancelled", event });
   } catch (err) {
     next(err);
   }

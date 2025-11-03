@@ -53,4 +53,11 @@ router.post(
   eventController.applyForEvent
 );
 
+router.delete(
+  "/staff/apply",
+  auth,
+  role("staff"),
+  eventController.cancelApplication
+);
+
 module.exports = router;
