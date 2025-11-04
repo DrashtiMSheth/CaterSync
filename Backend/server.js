@@ -36,14 +36,26 @@ const FE_ORIGIN =
     : "http://localhost:3000");
 
 // ✅ CORS Configuration
-app.use(
-  cors({
-    origin: FE_ORIGIN,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
-    credentials: true, // allow cookies/tokens
-  })
-);
+// app.use(
+//   cors({
+//     origin: FE_ORIGIN,
+//     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+//     allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"],
+//     credentials: true, // allow cookies/tokens
+//   })
+// );
+app.use(cors({
+  origin: (origin, callback) => {
+    const allowedOrigins = ["http://localhost:3000", "http://localhost:5001"];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+}));
+
 
 // ✅ Serve static files
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

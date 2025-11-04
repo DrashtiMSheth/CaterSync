@@ -59,7 +59,7 @@ export default function OrganiserLogin() {
       setFeedback("Login Successful ✅");
 
       emitEvent("organiser-login", { email: data.user?.email || form.email });
-      navigate("/organiser", { replace: true });
+      navigate("/organiser/dashboard", { replace: true });
     } catch (err) {
       const msg = (err.message || "Invalid credentials").toLowerCase();
       setShake(true);

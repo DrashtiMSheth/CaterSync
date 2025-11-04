@@ -164,3 +164,51 @@ exports.getOrganiserEvents = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.updateEvent = async (req, res, next) => {
+  try {
+    if (!["organiser", "admin"].includes(req.user.role)) {
+      return next({ statusCode: 403, message: "Unauthorized" });
+    }
+
+    const { eventId } = req.params;
+    const updates = req.body;
+
+    const event = await Event.findById(eventId);
+    if (!event) return next({ statusCode: 404, message: "Event not found" });
+
+    if (req.user.role === "organiser" && event.organiser.toString() !== req.user.id) {
+      return next({ statusCode: 403, message: "You can only update your own event" });
+    }
+
+    Object.assign(event, updates);
+    await event.save();
+
+    res.json({ success: true, message: "Event updated successfully", event });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.deleteEvent = async (req, res, next) => {
+  try {
+    if (!["organiser", "admin"].includes(req.user.role)) {
+      return next({ statusCode: 403, message: "Unauthorized" });
+    }
+
+    const { eventId } = req.params;
+    const event = await Event.findById(eventId);
+    if (!event) return next({ statusCode: 404, message: "Event not found" });
+
+    if (req.user.role === "organiser" && event.organiser.toString() !== req.user.id) {
+      return next({ statusCode: 403, message: "You can only delete your own event" });
+    }
+
+    await event.deleteOne();
+
+    res.json({ success: true, message: "Event deleted successfully" });
+  } catch (err) {
+    next(err);
+  }
+};
+

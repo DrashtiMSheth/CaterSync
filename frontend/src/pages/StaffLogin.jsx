@@ -51,7 +51,7 @@ export default function StaffLogin() {
 
     try {
       const data = await loginStaff({ email: email.trim(), password: password.trim() });
-      localStorage.setItem("staffToken", data.token);
+      sessionStorage.setItem("token", data.token);
       login(data.token, data.user || { email });
       setFeedback("Login Successful ✅");
       emitEvent("staff-login", { email: data.user?.email || email });
